@@ -2,6 +2,8 @@
 
 A simple mod that displays storage contents when hovering over storage bins, lockers, and other storage buildings.
 
+**[Available on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3637756953)**
+
 ## Features
 
 - Shows item names and quantities when hovering over any storage building
