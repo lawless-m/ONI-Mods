@@ -2,6 +2,8 @@
 
 A monorepo containing various mods for Oxygen Not Included.
 
+![Storage Tooltip Preview](storage-tooltip/preview.png)
+
 ## Mods
 
 ### [Storage Tooltip](storage-tooltip/)
