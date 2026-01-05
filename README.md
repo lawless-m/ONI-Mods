@@ -2,14 +2,14 @@
 
 A monorepo containing various mods for Oxygen Not Included.
 
-![Storage Tooltip Preview](storage-tooltip/preview.png)
-
 ## Mods
 
 ### [Storage Tooltip](storage-tooltip/)
 Enhanced storage container tooltips showing current contents with icons, item counts, and mass information.
 
 **[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3637756953)**
+
+![Storage Tooltip Preview](storage-tooltip/preview.png)
 
 **Features:**
 - Shows item names and quantities when hovering over storage buildings
