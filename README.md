@@ -13,6 +13,15 @@ Enhanced storage container tooltips showing current contents with icons, item co
 - Groups identical items together
 - Works with all storage buildings
 
+### [Magic Storage](magic-storage/) (WIP)
+Storage containers with infinite capacity that duplicate items when stored.
+
+**Features:**
+- Infinite storage capacity for all storage buildings
+- Automatically duplicates items placed in storage
+- Works with storage bins, refrigerators, ration boxes, and reservoirs
+- Creative mode style unlimited resources
+
 ## General Build Instructions
 
 All mods in this repository follow a similar build process:
@@ -65,6 +74,10 @@ ONI-Mods/
 ├── storage-tooltip/          (Storage Tooltip Mod)
 │   ├── README.md
 │   ├── StorageTooltipMod.cs
+│   └── ...
+├── magic-storage/            (Magic Storage Mod - WIP)
+│   ├── InfiniteStorage.cs
+│   ├── InfiniteStorage.csproj
 │   └── ...
 └── <future-mod>/            (more mods to come)
 ```
