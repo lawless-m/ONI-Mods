@@ -1,0 +1,5 @@
+supportedContent: VANILLA_ID,EXPANSION1_ID
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: Storage bins, refrigerators, ration boxes, and reservoirs provide infinite capacity
