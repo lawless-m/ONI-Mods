@@ -1,0 +1,8 @@
+We need to create a preview image (preview.png) - a 512x512 or 256x256 pixel image.
+
+Options:
+1. Use an image editor (GIMP, Krita, etc.) to create one
+2. Use ImageMagick to generate a simple text-based one
+3. Take a screenshot of the tooltip in action
+
+For now, let's create a simple one with ImageMagick.

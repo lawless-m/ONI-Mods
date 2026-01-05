@@ -1,0 +1,35 @@
+[h1]Storage Tooltip[/h1]
+
+See what's inside your storage bins without clicking on them!
+
+[h2]Features[/h2]
+[list]
+[*] Shows storage contents when hovering over any storage building
+[*] Groups identical items (e.g., "Iron Ore x5 (127.3 kg)")
+[*] Displays total mass vs capacity
+[*] Works with all storage buildings (Storage Bin, Smart Storage Bin, Refrigerator, etc.)
+[*] Seamlessly integrated - looks like a vanilla feature!
+[/list]
+
+[h2]How to Use[/h2]
+Simply hover your mouse over any storage building and you'll see a "STORAGE CONTENTS" section in the tooltip showing:
+[list]
+[*] Item names with quantities
+[*] Mass per item type
+[*] Total stored mass vs capacity
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*] Works with vanilla ONI and Spaced Out DLC
+[*] No known mod conflicts
+[*] Safe to add to existing saves
+[/list]
+
+[h2]Technical Details[/h2]
+This mod uses Harmony to patch the hover tooltip system, adding storage information without replacing or interfering with vanilla tooltips.
+
+[h2]Source Code[/h2]
+Available on request.
+
+Enjoy!
