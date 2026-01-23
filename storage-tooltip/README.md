@@ -11,16 +11,11 @@ A simple mod that displays storage contents when hovering over storage bins, loc
 - Groups identical items together (e.g., "Iron Ore x5 (127.3 kg)")
 - Limits display to 10 item types (shows "... and X more types" if needed)
 - Works with all storage buildings (Storage Bin, Smart Storage Bin, Refrigerator, etc.)
-- **Fully localized** - automatically displays in your game's language (Russian, Chinese, Korean)
+- **Fully localized** - will appear in your game's language
 
 ## Internationalization
 
-The mod automatically detects your game language and displays text accordingly:
-
-- **English**: "CONTENTS" / "Total"
-- **Russian (Русский)**: "СОДЕРЖАНИЕ" / "Всего"
-- **Chinese (中文)**: Chinese translations
-- **Korean (한국어)**: Korean translations
+The mod automatically detects your game language and displays text in your localized language. For example, in Russian it shows "СОДЕРЖАНИЕ" / "Всего" instead of "CONTENTS" / "Total".
 
 ## Building the Mod
 
