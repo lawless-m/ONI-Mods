@@ -103,8 +103,8 @@ namespace StorageTooltipMod
             // Start a new shadow bar for storage contents
             drawer.BeginShadowBar(false);
 
-            // Draw title
-            drawer.DrawText("STORAGE CONTENTS", card.Styles_Title.Standard);
+            // Draw title using ONI's localized "CONTENTS" string
+            drawer.DrawText(Strings.Get(STRINGS.UI.DETAILTABS.DETAILS.GROUPNAME_CONTENTS.key).String, card.Styles_Title.Standard);
 
             // Count items by type and sum their masses
             Dictionary<string, ItemInfo> itemSummary = new Dictionary<string, ItemInfo>();
@@ -147,7 +147,8 @@ namespace StorageTooltipMod
                 {
                     drawer.NewLine(26);
                     drawer.DrawIcon(card.iconDash, 18);
-                    drawer.DrawText($"... and {itemSummary.Count - MAX_ITEMS_TO_SHOW} more types", card.Styles_BodyText.Standard);
+                    // Use ONI's localized "{0} more" string
+                    drawer.DrawText(string.Format(Strings.Get(STRINGS.UI.UISIDESCREENS.MINIONTODOSIDESCREEN.TRUNCATED_CHORES.key).String, itemSummary.Count - MAX_ITEMS_TO_SHOW), card.Styles_BodyText.Standard);
                     break;
                 }
 
@@ -170,11 +171,11 @@ namespace StorageTooltipMod
                 displayedCount++;
             }
 
-            // Show total mass
+            // Show total mass using ONI's localized "Total" string
             float totalMass = storage.MassStored();
             float capacity = storage.capacityKg;
             drawer.NewLine(26);
-            drawer.DrawText($"Total: {GameUtil.GetFormattedMass(totalMass, GameUtil.TimeSlice.None, GameUtil.MetricMassFormat.UseThreshold, true, "{0:0.#}")} / {GameUtil.GetFormattedMass(capacity, GameUtil.TimeSlice.None, GameUtil.MetricMassFormat.UseThreshold, true, "{0:0.#}")}", card.Styles_BodyText.Standard);
+            drawer.DrawText($"{Strings.Get(STRINGS.UI.DIAGNOSTICS_SCREEN.TOTAL.key).String}: {GameUtil.GetFormattedMass(totalMass, GameUtil.TimeSlice.None, GameUtil.MetricMassFormat.UseThreshold, true, "{0:0.#}")} / {GameUtil.GetFormattedMass(capacity, GameUtil.TimeSlice.None, GameUtil.MetricMassFormat.UseThreshold, true, "{0:0.#}")}", card.Styles_BodyText.Standard);
 
             drawer.EndShadowBar();
         }
