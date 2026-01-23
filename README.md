@@ -16,6 +16,7 @@ Enhanced storage container tooltips showing current contents with icons, item co
 - Displays total mass stored vs capacity
 - Groups identical items together
 - Works with all storage buildings
+- **Fully localized** - supports English, Russian (Русский), Chinese (中文), and Korean (한국어)
 
 ### [Magic Storage](magic-storage/) (WIP)
 Storage containers with infinite capacity that duplicate items when stored.
