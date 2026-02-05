@@ -91,6 +91,19 @@ namespace StorageTooltipMod
                     // Draw storage contents section
                     DrawStorageContents(drawer, storage, items, card);
                 }
+
+                // Check each hovered object for radbolt storage
+                foreach (KSelectable selectable in hoverObjects)
+                {
+                    if (selectable == null)
+                        continue;
+
+                    HighEnergyParticleStorage hepStorage = selectable.GetComponent<HighEnergyParticleStorage>();
+                    if (hepStorage == null || hepStorage.capacity <= 0f)
+                        continue;
+
+                    DrawRadboltStorageContents(drawer, hepStorage, card);
+                }
             }
             catch (Exception ex)
             {
@@ -176,6 +189,22 @@ namespace StorageTooltipMod
             float capacity = storage.capacityKg;
             drawer.NewLine(26);
             drawer.DrawText($"{Strings.Get(STRINGS.UI.DIAGNOSTICS_SCREEN.TOTAL.key).String}: {GameUtil.GetFormattedMass(totalMass, GameUtil.TimeSlice.None, GameUtil.MetricMassFormat.UseThreshold, true, "{0:0.#}")} / {GameUtil.GetFormattedMass(capacity, GameUtil.TimeSlice.None, GameUtil.MetricMassFormat.UseThreshold, true, "{0:0.#}")}", card.Styles_BodyText.Standard);
+
+            drawer.EndShadowBar();
+        }
+
+        private static void DrawRadboltStorageContents(HoverTextDrawer drawer, HighEnergyParticleStorage hepStorage, SelectToolHoverTextCard card)
+        {
+            drawer.BeginShadowBar(false);
+
+            // Use the game's localized radbolt unit suffix for the title
+            string radboltLabel = Strings.Get(STRINGS.UI.UNITSUFFIXES.HIGHENERGYPARTICLES.PARTRICLES.key).String.Trim();
+            drawer.DrawText(radboltLabel, card.Styles_Title.Standard);
+
+            float stored = hepStorage.Particles;
+            float capacity = hepStorage.capacity;
+            drawer.NewLine(26);
+            drawer.DrawText($"{stored:0.#} / {capacity:0.#}", card.Styles_BodyText.Standard);
 
             drawer.EndShadowBar();
         }
