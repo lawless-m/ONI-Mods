@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
@@ -28,6 +29,12 @@ namespace StorageTooltipMod
     public class SelectToolHoverTextCard_UpdateHoverElements_Patch
     {
         private const int MAX_ITEMS_TO_SHOW = 10;
+
+        // Cached reflection lookups for DLC-only HighEnergyParticleStorage
+        private static bool hepTypeResolved;
+        private static Type hepType;
+        private static PropertyInfo hepParticlesProp;
+        private static FieldInfo hepCapacityField;
 
         /// <summary>
         /// Transpiler patch - injects our code before EndDrawing()
@@ -92,17 +99,25 @@ namespace StorageTooltipMod
                     DrawStorageContents(drawer, storage, items, card);
                 }
 
-                // Check each hovered object for radbolt storage
-                foreach (KSelectable selectable in hoverObjects)
+                // Check each hovered object for radbolt storage (DLC only)
+                if (TryResolveHepType())
                 {
-                    if (selectable == null)
-                        continue;
+                    foreach (KSelectable selectable in hoverObjects)
+                    {
+                        if (selectable == null)
+                            continue;
 
-                    HighEnergyParticleStorage hepStorage = selectable.GetComponent<HighEnergyParticleStorage>();
-                    if (hepStorage == null || hepStorage.capacity <= 0f)
-                        continue;
+                        Component hepStorage = selectable.GetComponent(hepType);
+                        if (hepStorage == null)
+                            continue;
 
-                    DrawRadboltStorageContents(drawer, hepStorage, card);
+                        float capacity = (float)hepCapacityField.GetValue(hepStorage);
+                        if (capacity <= 0f)
+                            continue;
+
+                        float stored = (float)hepParticlesProp.GetValue(hepStorage);
+                        DrawRadboltStorageContents(drawer, stored, capacity, card);
+                    }
                 }
             }
             catch (Exception ex)
@@ -193,16 +208,34 @@ namespace StorageTooltipMod
             drawer.EndShadowBar();
         }
 
-        private static void DrawRadboltStorageContents(HoverTextDrawer drawer, HighEnergyParticleStorage hepStorage, SelectToolHoverTextCard card)
+        private static bool TryResolveHepType()
+        {
+            if (hepTypeResolved)
+                return hepType != null;
+
+            hepTypeResolved = true;
+            hepType = Type.GetType("HighEnergyParticleStorage, Assembly-CSharp");
+            if (hepType == null)
+                return false;
+
+            hepParticlesProp = hepType.GetProperty("Particles");
+            hepCapacityField = hepType.GetField("capacity");
+            if (hepParticlesProp == null || hepCapacityField == null)
+            {
+                hepType = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void DrawRadboltStorageContents(HoverTextDrawer drawer, float stored, float capacity, SelectToolHoverTextCard card)
         {
             drawer.BeginShadowBar(false);
 
-            // Use the game's localized radbolt unit suffix for the title
             string radboltLabel = Strings.Get(STRINGS.UI.UNITSUFFIXES.HIGHENERGYPARTICLES.PARTRICLES.key).String.Trim();
             drawer.DrawText(radboltLabel, card.Styles_Title.Standard);
 
-            float stored = hepStorage.Particles;
-            float capacity = hepStorage.capacity;
             drawer.NewLine(26);
             drawer.DrawText($"{stored:0.#} / {capacity:0.#}", card.Styles_BodyText.Standard);
 
