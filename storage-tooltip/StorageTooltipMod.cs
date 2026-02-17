@@ -87,16 +87,28 @@ namespace StorageTooltipMod
                     if (selectable == null)
                         continue;
 
-                    Storage storage = selectable.GetComponent<Storage>();
-                    if (storage == null || !storage.ShouldShowInUI())
+                    Storage[] storages = selectable.GetComponents<Storage>();
+                    if (storages == null)
                         continue;
 
-                    List<GameObject> items = storage.GetItems();
-                    if (items == null || items.Count == 0)
-                        continue;
+                    // SweepBotStation has a showInUI storage for building materials - skip it
+                    KPrefabID prefabID = selectable.GetComponent<KPrefabID>();
+                    bool isSweepStation = prefabID != null && prefabID.PrefabTag.Name == "SweepBotStation";
 
-                    // Draw storage contents section
-                    DrawStorageContents(drawer, storage, items, card);
+                    foreach (Storage storage in storages)
+                    {
+                        if (!storage.showInUI)
+                            continue;
+
+                        if (isSweepStation && storage.fetchCategory == Storage.FetchCategory.Building)
+                            continue;
+
+                        List<GameObject> items = storage.GetItems();
+                        if (items == null || items.Count == 0)
+                            continue;
+
+                        DrawStorageContents(drawer, storage, items, card);
+                    }
                 }
 
                 // Check each hovered object for radbolt storage (DLC only)
