@@ -1,0 +1,5 @@
+supportedContent: ALL
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: Automatically completes the Neural Vacillator after a short delay instead of waiting for a manual button press
