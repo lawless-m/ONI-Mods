@@ -1,0 +1,5 @@
+supportedContent: VANILLA_ID,EXPANSION1_ID
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: Sets the Canister Filler's default fill amount to 200kg (maximum) when built, so you don't have to manually adjust the slider every time.
