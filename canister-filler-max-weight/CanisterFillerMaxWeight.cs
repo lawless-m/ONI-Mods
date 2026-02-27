@@ -1,4 +1,3 @@
-using System;
 using HarmonyLib;
 using UnityEngine;
 using KMod;
@@ -9,7 +8,7 @@ namespace CanisterFillerMaxWeight
     {
         public override void OnLoad(Harmony harmony)
         {
-            Debug.Log("CanisterFillerMaxWeight: Initializing...");
+            Debug.Log("CanisterFillerMaxWeight: Loading...");
             base.OnLoad(harmony);
             Debug.Log("CanisterFillerMaxWeight: Loaded successfully!");
         }
@@ -17,10 +16,8 @@ namespace CanisterFillerMaxWeight
 
     /// <summary>
     /// Patch GasBottlerConfig.DoPostConfigureComplete to set the default
-    /// user capacity slider to 200kg (the maximum) instead of 25kg.
-    /// This affects the building prefab, so all newly built Canister Fillers
-    /// will default to max. Existing buildings loaded from saves keep their
-    /// saved slider value due to serialization.
+    /// user capacity slider to max (200kg) instead of 25kg.
+    /// Existing buildings loaded from saves keep their saved slider value.
     /// </summary>
     [HarmonyPatch(typeof(GasBottlerConfig))]
     [HarmonyPatch("DoPostConfigureComplete")]
@@ -28,22 +25,11 @@ namespace CanisterFillerMaxWeight
     {
         public static void Postfix(GameObject go)
         {
-            try
+            var bottler = go.GetComponent<Bottler>();
+            if (bottler != null)
             {
-                var userControlled = go.GetComponent<IUserControlledCapacity>();
-                if (userControlled != null)
-                {
-                    float max = userControlled.MaxCapacity;
-                    if (max > 0f)
-                    {
-                        userControlled.UserMaxCapacity = max;
-                        Debug.Log($"CanisterFillerMaxWeight: Set default capacity to {max} kg");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"CanisterFillerMaxWeight: Error setting default capacity: {ex}");
+                bottler.UserMaxCapacity = bottler.MaxCapacity;
+                Debug.Log($"CanisterFillerMaxWeight: Set default capacity to {bottler.MaxCapacity} kg");
             }
         }
     }
