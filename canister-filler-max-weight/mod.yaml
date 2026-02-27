@@ -1,0 +1,3 @@
+staticID: CanisterFillerMaxWeight
+title: "Canister Filler Max Weight"
+description: "Sets the Canister Filler's default fill amount to 200kg (maximum) when built"
