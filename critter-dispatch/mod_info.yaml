@@ -1,0 +1,5 @@
+supportedContent: ALL
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: A lethal critter trap that automatically butchers caught critters and drops their meat
