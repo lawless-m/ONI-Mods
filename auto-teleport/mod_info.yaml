@@ -1,0 +1,5 @@
+supportedContent: EXPANSION1_ID
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: Automatically teleports duplicants when they enter a Warp Portal instead of requiring a manual button press
