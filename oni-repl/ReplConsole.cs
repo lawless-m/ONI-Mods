@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace OniRepl
@@ -44,6 +45,29 @@ namespace OniRepl
             engine.RegisterWord(new Words.SwapWord());
             engine.RegisterWord(new Words.RotWord());
             engine.RegisterWord(new Words.PrintStackWord());
+            engine.RegisterWord(new Words.ResetWord());
+            engine.RegisterWord(new Words.SaveWord(engine));
+            engine.RegisterWord(new Words.LoadWord(engine));
+
+            AutoLoadInit();
+        }
+
+        private void AutoLoadInit()
+        {
+            var path = Path.Combine(Words.SaveWord.ModDirectory, "init.forth");
+            if (!File.Exists(path)) return;
+
+            try
+            {
+                var content = File.ReadAllText(path);
+                var result = engine.Execute(content);
+                if (result != null)
+                    AppendOutput(result);
+            }
+            catch (System.Exception ex)
+            {
+                AppendOutput($"Error loading init.forth: {ex.Message}");
+            }
         }
 
         private void Update()

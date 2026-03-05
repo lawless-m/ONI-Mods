@@ -60,6 +60,19 @@ namespace OniRepl.Words
         }
     }
 
+    public class ResetWord : IWord
+    {
+        public string Name => "reset";
+        public string Help => "reset — Clear the entire stack";
+        public bool SuppressAchievements => false;
+        public string Execute(Stack<StackValue> stack)
+        {
+            int count = stack.Count;
+            stack.Clear();
+            return count > 0 ? $"Cleared {count} item(s) from stack" : "Stack already empty";
+        }
+    }
+
     public class PrintStackWord : IWord
     {
         public string Name => ".s";

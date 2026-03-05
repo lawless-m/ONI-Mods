@@ -5,7 +5,7 @@ namespace OniRepl.Words
     public class FillWord : IWord
     {
         public string Name => "fill";
-        public string Help => "[material] building x1,y1 x2,y2 fill — Fill rectangle with build orders. Material and building stay on stack.";
+        public string Help => "material building x1,y1 x2,y2 fill — Fill rectangle. E.g.: sandstone tile 50,30 55,33 fill";
         public bool SuppressAchievements => false;
 
         public string Execute(Stack<StackValue> stack)

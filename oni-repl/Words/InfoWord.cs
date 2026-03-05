@@ -5,18 +5,18 @@ namespace OniRepl.Words
     public class InfoWord : IWord
     {
         public string Name => "info";
-        public string Help => "location info — Show cell info (element, mass, temperature). E.g.: cursor info";
+        public string Help => "info — Show cell info at current position. E.g.: cursor info";
         public bool SuppressAchievements => false;
 
         public string Execute(Stack<StackValue> stack)
         {
-            var loc = stack.Pop();
-            if (loc.Type != ValueType.Location)
-                return $"Error: expected location, got {loc}";
+            // Discard location on top if present (already captured in BuildState)
+            if (stack.Count > 0 && stack.Peek().Type == ValueType.Location)
+                stack.Pop();
 
-            int cell = loc.Cell;
+            int cell = BuildState.Cell;
             if (!Grid.IsValidCell(cell))
-                return "Error: invalid cell";
+                return "Error: no position set (use cursor, printer, or x,y first)";
 
             var element = Grid.Element[cell];
             float mass = Grid.Mass[cell];

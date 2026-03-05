@@ -6,18 +6,18 @@ namespace OniRepl.Words
     public class SpawnWord : IWord
     {
         public string Name => "spawn";
-        public string Help => "thing [quantity] location spawn — Spawn element or critter. E.g.: water 1000kg cursor spawn, hatch cursor spawn";
+        public string Help => "thing [quantity] spawn — Spawn at current position. E.g.: water 1000kg cursor spawn, hatch cursor spawn";
         public bool SuppressAchievements => true;
 
         public string Execute(Stack<StackValue> stack)
         {
-            var loc = stack.Pop();
-            if (loc.Type != ValueType.Location)
-                return $"Error: expected location, got {loc}";
+            // Discard location on top if present (already captured in BuildState)
+            if (stack.Count > 0 && stack.Peek().Type == ValueType.Location)
+                stack.Pop();
 
-            int cell = loc.Cell;
+            int cell = BuildState.Cell;
             if (!Grid.IsValidCell(cell))
-                return "Error: invalid cell location";
+                return "Error: no position set (use cursor, printer, or x,y first)";
 
             // Peek to decide: if top is quantity, it's an element spawn
             // If top is element/critter directly, dispatch accordingly

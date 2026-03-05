@@ -34,7 +34,7 @@ namespace OniRepl.Words
         internal static readonly Dictionary<int, string> TrackedBuilds = new Dictionary<int, string>();
 
         public string Name => "build";
-        public string Help => "[material] building build — Build at current position. Material and building stay on stack.";
+        public string Help => "material building position build — Build at position. E.g.: sandstone tile cursor build | granite ladder 50,30 build | Chain: sandstone tile cursor build right build";
         public bool SuppressAchievements => false;
 
         public string Execute(Stack<StackValue> stack)
@@ -42,6 +42,10 @@ namespace OniRepl.Words
             int cell = BuildState.Cell;
             if (!Grid.IsValidCell(cell))
                 return "Error: no build position set (use cursor, printer, or x,y first)";
+
+            // Discard location on top if present (already captured in BuildState)
+            if (stack.Count > 0 && stack.Peek().Type == ValueType.Location)
+                stack.Pop();
 
             // Peek building (top)
             if (stack.Count == 0 || stack.Peek().Type != ValueType.Building)
@@ -121,7 +125,7 @@ namespace OniRepl.Words
         private readonly BuildWord build = new BuildWord();
 
         public string Name => "built";
-        public string Help => "built — Final build, then drop material and building from stack";
+        public string Help => "built — Like build but drops material and building from stack. E.g.: sandstone tile cursor built";
         public bool SuppressAchievements => false;
 
         public string Execute(Stack<StackValue> stack)
@@ -161,7 +165,7 @@ namespace OniRepl.Words
         public WaitWord(ForthEngine engine) { this.engine = engine; }
 
         public string Name => "wait";
-        public string Help => "wait — Wait for all tracked build orders to complete before continuing";
+        public string Help => "wait — Pause until tracked builds complete. E.g.: sandstone tile cursor build right build wait";
         public bool SuppressAchievements => false;
 
         public string Execute(Stack<StackValue> stack)
