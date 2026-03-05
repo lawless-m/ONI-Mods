@@ -29,8 +29,10 @@ namespace OniRepl
             engine.RegisterWord(new Words.SpawnWord());
             engine.RegisterWord(new Words.PriorityWord());
             engine.RegisterWord(new Words.BuildWord());
+            engine.RegisterWord(new Words.BuiltWord());
             engine.RegisterWord(new Words.FillWord());
             engine.RegisterWord(new Words.WaitWord(engine));
+            engine.RegisterWord(new Words.ClearWord(engine));
             engine.RegisterWord(new Words.InfoWord());
             engine.RegisterWord(new Words.ListWord());
             engine.RegisterWord(new Words.DirectionWord("left", -1, 0));

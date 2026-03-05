@@ -41,4 +41,13 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
+
+  <PropertyGroup>
+    <MOD_DIR>$(HOME)/.config/unity3d/Klei/Oxygen Not Included/mods/Dev/OniRepl</MOD_DIR>
+  </PropertyGroup>
+
+  <Target Name="Deploy" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MOD_DIR)" />
+    <Copy SourceFiles="mod.yaml;mod_info.yaml" DestinationFolder="$(MOD_DIR)" />
+  </Target>
 </Project>

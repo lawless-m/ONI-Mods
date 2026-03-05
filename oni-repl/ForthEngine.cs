@@ -85,7 +85,17 @@ namespace OniRepl
         public string Execute(string input)
         {
             var tokens = Tokenize(input);
+            if (Suspended)
+            {
+                continuation.AddRange(tokens);
+                return "Queued (waiting for builds to complete)...";
+            }
             return ExecuteTokens(tokens, 0);
+        }
+
+        public void ClearContinuation()
+        {
+            continuation.Clear();
         }
 
         public string Resume()

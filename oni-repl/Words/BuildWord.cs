@@ -54,7 +54,7 @@ namespace OniRepl.Words
             if (stack.Count > 0 && stack.Peek().Type == ValueType.Element)
                 materials = MakeMaterials(stack.Peek().Element, def);
             else
-                materials = GetDefaultMaterials(def);
+                return $"Error: no material specified. E.g.: sandstone {def.PrefabID} build";
 
             // Push building back
             stack.Push(bldgVal);
@@ -91,19 +91,66 @@ namespace OniRepl.Words
             return go;
         }
 
+        private static readonly HashSet<SimHashes> PreferredMaterials = new HashSet<SimHashes>
+        {
+            SimHashes.SandStone, SimHashes.Granite, SimHashes.IgneousRock,
+            SimHashes.SedimentaryRock, SimHashes.Copper, SimHashes.Iron,
+            SimHashes.Steel, SimHashes.Gold
+        };
+
         internal static Tag[] GetDefaultMaterials(BuildingDef def)
         {
             var result = new Tag[def.MaterialCategory.Length];
             for (int i = 0; i < def.MaterialCategory.Length; i++)
             {
                 var category = def.MaterialCategory[i];
-                var elem = ElementLoader.elements.FirstOrDefault(
-                    e => e.oreTags != null && e.oreTags.Contains(category));
+                var candidates = ElementLoader.elements
+                    .Where(e => e.oreTags != null && e.oreTags.Contains(category));
+                var elem = candidates.FirstOrDefault(e => PreferredMaterials.Contains(e.id))
+                    ?? candidates.FirstOrDefault();
                 if (elem == null)
                     return null;
                 result[i] = elem.tag;
             }
             return result;
+        }
+    }
+
+    public class BuiltWord : IWord
+    {
+        private readonly BuildWord build = new BuildWord();
+
+        public string Name => "built";
+        public string Help => "built — Final build, then drop material and building from stack";
+        public bool SuppressAchievements => false;
+
+        public string Execute(Stack<StackValue> stack)
+        {
+            var result = build.Execute(stack);
+            // Drop building and material left on stack
+            if (stack.Count > 0 && stack.Peek().Type == ValueType.Building) stack.Pop();
+            if (stack.Count > 0 && stack.Peek().Type == ValueType.Element) stack.Pop();
+            return result;
+        }
+    }
+
+    public class ClearWord : IWord
+    {
+        private readonly ForthEngine engine;
+
+        public ClearWord(ForthEngine engine) { this.engine = engine; }
+
+        public string Name => "clear";
+        public string Help => "clear — Cancel wait, clear tracked builds and queued commands";
+        public bool SuppressAchievements => false;
+
+        public string Execute(Stack<StackValue> stack)
+        {
+            int count = BuildWord.TrackedBuilds.Count;
+            BuildWord.TrackedBuilds.Clear();
+            engine.Suspended = false;
+            engine.ClearContinuation();
+            return count > 0 ? $"Cleared {count} tracked build(s)" : "Nothing to clear";
         }
     }
 

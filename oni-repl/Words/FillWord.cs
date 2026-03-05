@@ -31,11 +31,11 @@ namespace OniRepl.Words
             if (stack.Count > 0 && stack.Peek().Type == ValueType.Element)
                 materials = BuildWord.MakeMaterials(stack.Peek().Element, def);
             else
-                materials = BuildWord.GetDefaultMaterials(def);
+            {
+                stack.Push(bldgVal);
+                return $"Error: no material specified. E.g.: sandstone {def.PrefabID} ... fill";
+            }
             stack.Push(bldgVal);
-
-            if (materials == null)
-                return $"Error: could not find materials for {def.PrefabID}";
 
             int x1, y1, x2, y2;
             Grid.CellToXY(start.Cell, out x1, out y1);
