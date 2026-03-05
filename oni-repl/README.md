@@ -186,7 +186,13 @@ A practical build sequence:
 > blueprints load                \ load blueprints.forth
 ```
 
-Words are saved as plain Forth source — editable in any text editor. `init.forth` auto-loads on startup.
+Words are saved as plain Forth source — editable in any text editor. `init.forth` auto-loads on startup. Put `28 fontsize` in there to set your preferred font size every session.
+
+### Display
+
+```
+> 28 fontsize                    \ set console font size (auto-scales to screen by default)
+```
 
 ### Comments
 
@@ -235,6 +241,7 @@ Copy to your ONI mods folder:
 | `Words/ListWord.cs` | `list` (game object enumeration) |
 | `Words/StackWords.cs` | `dup`, `drop`, `swap`, `rot`, `.s`, `reset` |
 | `Words/FileWords.cs` | `save`, `load` |
+| `Words/FontSizeWord.cs` | `fontsize` |
 | `Words/HelpWord.cs` | `help` |
 
 ## How It Works

@@ -49,6 +49,7 @@ namespace OniRepl
             engine.RegisterWord(new Words.ResetWord());
             engine.RegisterWord(new Words.SaveWord(engine));
             engine.RegisterWord(new Words.LoadWord(engine));
+            engine.RegisterWord(new Words.FontSizeWord());
 
             AutoLoadInit();
         }
@@ -80,9 +81,20 @@ namespace OniRepl
             }
         }
 
+        private int currentFontSize;
+
+        public void SetFontSize(int size)
+        {
+            currentFontSize = size;
+            if (labelStyle != null) labelStyle.fontSize = size;
+            if (inputStyle != null) inputStyle.fontSize = size;
+        }
+
         private void EnsureStyles()
         {
             if (boxStyle != null) return;
+
+            currentFontSize = Mathf.RoundToInt(14f * Screen.height / 1080f);
 
             boxStyle = new GUIStyle(GUI.skin.box);
             var bgTex = new Texture2D(1, 1);
@@ -92,13 +104,13 @@ namespace OniRepl
 
             labelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = currentFontSize,
                 wordWrap = true,
                 richText = true
             };
             labelStyle.normal.textColor = new Color(0.8f, 0.9f, 0.8f);
 
-            inputStyle = new GUIStyle(GUI.skin.textField) { fontSize = 14 };
+            inputStyle = new GUIStyle(GUI.skin.textField) { fontSize = currentFontSize };
             inputStyle.normal.textColor = Color.green;
         }
 
