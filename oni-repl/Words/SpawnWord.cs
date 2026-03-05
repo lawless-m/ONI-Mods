@@ -6,7 +6,7 @@ namespace OniRepl.Words
     public class SpawnWord : IWord
     {
         public string Name => "spawn";
-        public string Help => "thing [quantity] spawn — Spawn at current position. E.g.: water 1000kg cursor spawn, hatch cursor spawn";
+        public string Help => "thing [quantity] spawn — Spawn at current position (DISABLES ACHIEVEMENTS). E.g.: water 1000kg cursor spawn, hatch cursor spawn";
         public bool SuppressAchievements => true;
 
         public string Execute(Stack<StackValue> stack)
