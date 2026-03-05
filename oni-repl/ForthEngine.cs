@@ -113,6 +113,57 @@ namespace OniRepl
 
             for (int i = startIndex; i < tokens.Count; i++)
             {
+                // Handle do...loop: N do body... loop
+                if (tokens[i].Equals("do", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (DataStack.Count == 0 || DataStack.Peek().Type != ValueType.Number)
+                    {
+                        output.Add("Error: do expects a number on stack. E.g.: 3 do build up loop");
+                        break;
+                    }
+                    int count = DataStack.Pop().IntValue;
+
+                    var body = new List<string>();
+                    int depth = 1;
+                    i++;
+                    while (i < tokens.Count && depth > 0)
+                    {
+                        if (tokens[i].Equals("do", StringComparison.OrdinalIgnoreCase))
+                            depth++;
+                        else if (tokens[i].Equals("loop", StringComparison.OrdinalIgnoreCase))
+                        {
+                            depth--;
+                            if (depth == 0) break;
+                        }
+                        body.Add(tokens[i]);
+                        i++;
+                    }
+                    if (depth > 0)
+                    {
+                        output.Add("Error: unterminated do, expected 'loop'");
+                        break;
+                    }
+
+                    for (int n = 0; n < count; n++)
+                    {
+                        var loopResult = ExecuteTokens(body, 0);
+                        if (loopResult != null)
+                            output.Add(loopResult);
+                        if (Suspended)
+                        {
+                            // Queue remaining iterations as flat body tokens
+                            for (int remaining = n + 1; remaining < count; remaining++)
+                                continuation.AddRange(body);
+                            // Then tokens after loop
+                            for (int j = i + 1; j < tokens.Count; j++)
+                                continuation.Add(tokens[j]);
+                            break;
+                        }
+                    }
+                    if (Suspended) break;
+                    continue;
+                }
+
                 // Handle word definition: : name ... ;
                 if (tokens[i] == ":")
                 {

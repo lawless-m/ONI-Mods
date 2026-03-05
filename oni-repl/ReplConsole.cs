@@ -40,6 +40,7 @@ namespace OniRepl
             engine.RegisterWord(new Words.DirectionWord("right", 1, 0));
             engine.RegisterWord(new Words.DirectionWord("up", 0, 1));
             engine.RegisterWord(new Words.DirectionWord("down", 0, -1));
+            engine.RegisterWord(new Words.DigWord());
             engine.RegisterWord(new Words.DupWord());
             engine.RegisterWord(new Words.DropWord());
             engine.RegisterWord(new Words.SwapWord());
