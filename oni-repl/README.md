@@ -90,6 +90,16 @@ After setting an initial position, move it relative:
 | `up` | y + 1 |
 | `down` | y - 1 |
 
+#### `dig` — Place a dig errand
+
+```
+> cursor dig                           \ dig at cursor
+> cursor dig 4 do up dig loop          \ dig a shaft
+> : tunnel 10 do dig right loop ;      \ define a horizontal tunnel
+```
+
+Respects priority. Chains with directions and loops.
+
 #### `fill` — Fill a rectangle
 
 ```
@@ -147,11 +157,23 @@ Words are referentially transparent — shapes are generic, materials compose at
 > cursor sandstone tile L wait
 ```
 
+### Loops
+
+`do`/`loop` repeats a body N times:
+
+```
+> 5 do build right loop              \ build 5 tiles rightward
+> cursor dig 9 do up dig loop        \ dig a 10-tall shaft
+> : corridor 10 do dig right loop ;  \ reusable tunnel word
+```
+
+Works inside word definitions. Supports nesting.
+
 A practical build sequence:
 
 ```
-> : floor build right build right build right built ;
-> : wall build up build up build up built ;
+> : floor 4 do build right loop built ;
+> : wall 4 do build up loop built ;
 > 9 priority granite tile cursor floor
 > granite tile cursor wall wait
 ```
@@ -206,6 +228,7 @@ Copy to your ONI mods folder:
 | `ReplMod.cs` | Harmony patches: game hook, build completion tracking, input blocking |
 | `Resolvers.cs` | Fuzzy name resolution for elements, buildings, critters, locations |
 | `Words/BuildWord.cs` | `build`, `built`, `fill`, `priority`, `wait`, `clear` |
+| `Words/DigWord.cs` | `dig` |
 | `Words/DirectionWords.cs` | `left`, `right`, `up`, `down` |
 | `Words/SpawnWord.cs` | `spawn` (elements and critters) |
 | `Words/InfoWord.cs` | `info` (cell inspection) |
