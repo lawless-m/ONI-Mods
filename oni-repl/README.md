@@ -126,12 +126,12 @@ Words are late-bound — redefining a word changes everything that uses it:
 ### Persistence
 
 ```
-> save                                   \ save user words to init.forth
-> load                                   \ reload init.forth
-> blueprints load                        \ load blueprints.forth
+> save                                   \ save user words to oni.repl
+> load                                   \ reload oni.repl
+> blueprints load                        \ load blueprints.repl
 ```
 
-Words are saved as plain source — editable in any text editor. `init.forth` auto-loads on startup.
+Words are saved as plain source — editable in any text editor. `oni.repl` auto-loads on startup.
 
 ### Display
 
@@ -139,7 +139,7 @@ Words are saved as plain source — editable in any text editor. `init.forth` au
 > 28 fontsize                            \ set font size (auto-scales to screen by default)
 ```
 
-Put `28 fontsize` in `init.forth` to persist it.
+Put `28 fontsize` in `oni.repl` to persist it.
 
 ### Comments
 

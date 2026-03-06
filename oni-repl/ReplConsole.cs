@@ -50,7 +50,7 @@ namespace OniRepl
 
         private void AutoLoadInit()
         {
-            var path = Path.Combine(Words.SaveWord.ModDirectory, "init.forth");
+            var path = Path.Combine(Words.SaveWord.ModDirectory, "oni.repl");
             if (!File.Exists(path)) return;
 
             try
@@ -62,7 +62,7 @@ namespace OniRepl
             }
             catch (System.Exception ex)
             {
-                AppendOutput($"Error loading init.forth: {ex.Message}");
+                AppendOutput($"Error loading oni.repl: {ex.Message}");
             }
         }
 

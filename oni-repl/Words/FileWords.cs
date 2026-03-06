@@ -11,7 +11,7 @@ namespace OniRepl.Words
         public SaveWord(ForthEngine engine) { this.engine = engine; }
 
         public string Name => "save";
-        public string Help => "save — Save user-defined words to init.forth";
+        public string Help => "save — Save user-defined words to oni.repl";
         public bool SuppressAchievements => false;
 
         public string Execute()
@@ -24,7 +24,7 @@ namespace OniRepl.Words
             foreach (var kvp in words.OrderBy(w => w.Key))
                 lines.Add($": {kvp.Key} {string.Join(" ", kvp.Value)} ;");
 
-            var path = Path.Combine(ModDirectory, "init.forth");
+            var path = Path.Combine(ModDirectory, "oni.repl");
             File.WriteAllText(path, string.Join("\n", lines) + "\n");
             return $"Saved {words.Count} word(s) to {path}";
         }
@@ -40,17 +40,17 @@ namespace OniRepl.Words
         public LoadWord(ForthEngine engine) { this.engine = engine; }
 
         public string Name => "load";
-        public string Help => "load — Load init.forth. Or: filename load — Load a .forth file";
+        public string Help => "load — Load oni.repl. Or: filename load — Load a .repl file";
         public bool SuppressAchievements => false;
 
         public string Execute()
         {
-            string filename = "init.forth";
+            string filename = "oni.repl";
             if (!string.IsNullOrEmpty(Registers.Symbol))
             {
                 filename = Registers.Symbol;
-                if (!filename.EndsWith(".forth"))
-                    filename += ".forth";
+                if (!filename.EndsWith(".repl"))
+                    filename += ".repl";
             }
 
             var path = Path.Combine(SaveWord.ModDirectory, filename);
