@@ -146,7 +146,8 @@ namespace OniRepl.Words
                 {
                     int cell = Grid.PosToCell(g.transform.GetPosition());
                     Grid.CellToXY(cell, out int x, out int y);
-                    return $"{g.gameObject.name} ({x},{y})";
+                    var name = g.GetComponent<KPrefabID>()?.GetProperName() ?? g.gameObject.name;
+                    return $"{name} ({x},{y})";
                 })
                 .OrderBy(e => e);
             return $"Geysers ({geysers.Length}):\n  " + string.Join("\n  ", entries);
