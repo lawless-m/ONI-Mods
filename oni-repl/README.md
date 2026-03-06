@@ -99,7 +99,7 @@ All name lookups are case-insensitive with prefix matching — type just enough 
 ### Defining Words
 
 ```
-> : L build right build right build up build up build ;
+> : L build down build down build right build right build ;
 > granite gaspipe cursor L
 > sandstone tile cursor L               \ same shape, different material+building
 ```
