@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace OniRepl.Words
 {
     public class ListWord : IWord
     {
         public string Name => "list";
-        public string Help => "category list — List game objects. E.g.: dupes list, buildings list, buildables list, critters list, elements list, items list";
+        public string Help => "category list — List game objects. E.g.: dupes list, buildings list, buildables list, critters list, elements list, items list, geysers list";
         public bool SuppressAchievements => false;
 
         public string Execute()
@@ -29,8 +30,10 @@ namespace OniRepl.Words
                     return ListElements();
                 case "items":
                     return ListItems();
+                case "geysers":
+                    return ListGeysers();
                 default:
-                    return $"Unknown category '{category}'. Try: dupes, buildings, buildables, critters, elements, items";
+                    return $"Unknown category '{category}'. Try: dupes, buildings, buildables, critters, elements, items, geysers";
             }
         }
 
@@ -131,6 +134,22 @@ namespace OniRepl.Words
             }
 
             return lines.Count > 0 ? "Items:\n" + string.Join("\n", lines) : "No items found";
+        }
+
+        private string ListGeysers()
+        {
+            var geysers = UnityEngine.Object.FindObjectsOfType<Geyser>();
+            if (geysers == null || geysers.Length == 0)
+                return "No geysers found";
+            var entries = geysers
+                .Select(g =>
+                {
+                    int cell = Grid.PosToCell(g.transform.GetPosition());
+                    Grid.CellToXY(cell, out int x, out int y);
+                    return $"{g.gameObject.name} ({x},{y})";
+                })
+                .OrderBy(e => e);
+            return $"Geysers ({geysers.Length}):\n  " + string.Join("\n  ", entries);
         }
 
         private static string GroupByInitial(IEnumerable<string> items)
