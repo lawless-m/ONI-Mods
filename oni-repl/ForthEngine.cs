@@ -246,6 +246,7 @@ namespace OniRepl
             if (ElementResolver.TryResolve(token, out SimHashes hash))
             {
                 Registers.Material = hash;
+                Registers.Symbol = token;
                 return;
             }
 

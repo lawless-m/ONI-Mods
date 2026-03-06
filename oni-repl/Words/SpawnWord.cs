@@ -12,17 +12,21 @@ namespace OniRepl.Words
             if (!Grid.IsValidCell(cell))
                 return "Error: no position set (use cursor, printer, or x,y first)";
 
-            if (Registers.Material == default(SimHashes))
+            var symbol = Registers.Symbol;
+            if (string.IsNullOrEmpty(symbol))
                 return "Error: no element set. E.g.: water spawn";
 
-            var element = ElementLoader.FindElementByHash(Registers.Material);
+            if (!ElementResolver.TryResolve(symbol, out SimHashes hash))
+                return $"Error: '{symbol}' is not an element";
+
+            var element = ElementLoader.FindElementByHash(hash);
             float temp = element.defaultValues.temperature;
             if (temp <= 0) temp = 300f;
 
             float kg = Registers.Quantity;
 
             SimMessages.AddRemoveSubstance(
-                cell, Registers.Material, CellEventLogger.Instance.ElementConsumerSimUpdate,
+                cell, hash, CellEventLogger.Instance.ElementConsumerSimUpdate,
                 kg, temp, byte.MaxValue, 0);
 
             return $"Spawned {kg}kg of {element.id} at cell {cell}";
