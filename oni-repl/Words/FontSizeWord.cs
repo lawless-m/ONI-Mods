@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace OniRepl.Words
 {
     public class FontSizeWord : IWord
@@ -8,13 +6,9 @@ namespace OniRepl.Words
         public string Help => "n fontsize — Set console font size. E.g.: 28 fontsize";
         public bool SuppressAchievements => false;
 
-        public string Execute(Stack<StackValue> stack)
+        public string Execute()
         {
-            var val = stack.Pop();
-            if (val.Type != ValueType.Number)
-                return $"Error: expected number, got {val}";
-
-            int size = val.IntValue;
+            int size = Registers.Count;
             if (size < 8 || size > 72)
                 return $"Error: font size must be 8-72, got {size}";
 

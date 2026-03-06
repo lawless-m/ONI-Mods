@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace OniRepl.Words
 {
     public class DirectionWord : IWord
@@ -19,11 +17,11 @@ namespace OniRepl.Words
         public string Help => $"{name} — Move build position one cell {name}";
         public bool SuppressAchievements => false;
 
-        public string Execute(Stack<StackValue> stack)
+        public string Execute()
         {
             int x, y;
-            Grid.CellToXY(BuildState.Cell, out x, out y);
-            BuildState.Cell = Grid.XYToCell(x + dx, y + dy);
+            Grid.CellToXY(Registers.Cell, out x, out y);
+            Registers.Cell = Grid.XYToCell(x + dx, y + dy);
             return null;
         }
     }

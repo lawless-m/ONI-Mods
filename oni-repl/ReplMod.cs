@@ -53,4 +53,14 @@ namespace OniRepl
             return !ReplConsole.IsVisible;
         }
     }
+
+    [HarmonyPatch(typeof(CameraController), "OnKeyDown")]
+    public static class CameraController_OnKeyDown_Patch
+    {
+        public static bool Prefix()
+        {
+            return !ReplConsole.IsVisible;
+        }
+    }
+
 }

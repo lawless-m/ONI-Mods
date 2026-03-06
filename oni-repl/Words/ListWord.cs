@@ -6,13 +6,12 @@ namespace OniRepl.Words
     public class ListWord : IWord
     {
         public string Name => "list";
-        public string Help => "category list — List game objects. Categories: dupes, buildings, buildables, critters, elements";
+        public string Help => "category list — List game objects. E.g.: dupes list, buildings list, buildables list, critters list, elements list, items list";
         public bool SuppressAchievements => false;
 
-        public string Execute(Stack<StackValue> stack)
+        public string Execute()
         {
-            var cat = stack.Pop();
-            string category = cat.Raw.ToLowerInvariant();
+            string category = (Registers.Symbol ?? "").ToLowerInvariant();
 
             switch (category)
             {
@@ -28,8 +27,10 @@ namespace OniRepl.Words
                     return ListBuildables();
                 case "elements":
                     return ListElements();
+                case "items":
+                    return ListItems();
                 default:
-                    return $"Unknown category '{category}'. Try: dupes, buildings, buildables, critters, elements";
+                    return $"Unknown category '{category}'. Try: dupes, buildings, buildables, critters, elements, items";
             }
         }
 
@@ -38,8 +39,8 @@ namespace OniRepl.Words
             var dupes = Components.LiveMinionIdentities.Items;
             if (dupes == null || dupes.Count == 0)
                 return "No duplicants found";
-            var names = dupes.Select(d => d.name).ToList();
-            return $"Duplicants ({names.Count}):\n  " + string.Join("\n  ", names);
+            var names = dupes.Select(d => d.name);
+            return $"Duplicants ({dupes.Count}): " + string.Join(", ", names);
         }
 
         private string ListBuildings()
@@ -49,8 +50,8 @@ namespace OniRepl.Words
                 return "No buildings found";
             var groups = buildings.GroupBy(b => b.name)
                 .OrderByDescending(g => g.Count())
-                .Select(g => $"{g.Key}: {g.Count()}");
-            return $"Buildings ({buildings.Count} total):\n  " + string.Join("\n  ", groups);
+                .Select(g => $"{g.Key} ({g.Count()})");
+            return $"Buildings ({buildings.Count}): " + string.Join(", ", groups);
         }
 
         private string ListCritters()
@@ -62,11 +63,11 @@ namespace OniRepl.Words
                 .Where(b => b.GetComponent<CreatureBrain>() != null)
                 .GroupBy(b => b.name)
                 .OrderByDescending(g => g.Count())
-                .Select(g => $"{g.Key}: {g.Count()}");
+                .Select(g => $"{g.Key} ({g.Count()})");
             var list = critters.ToList();
             if (list.Count == 0)
                 return "No critters found";
-            return $"Critters:\n  " + string.Join("\n  ", list);
+            return "Critters: " + string.Join(", ", list);
         }
 
         private string ListBuildables()
@@ -75,7 +76,7 @@ namespace OniRepl.Words
             if (defs == null || defs.Count == 0)
                 return "No building defs loaded";
             var names = defs.OrderBy(d => d.PrefabID).Select(d => d.PrefabID);
-            return $"Buildable types ({defs.Count}):\n  " + string.Join("\n  ", names);
+            return $"Buildables ({defs.Count}):\n" + GroupByInitial(names);
         }
 
         private string ListElements()
@@ -87,7 +88,55 @@ namespace OniRepl.Words
                 .Where(e => e.id != SimHashes.Vacuum && e.id != SimHashes.Void)
                 .OrderBy(e => e.id.ToString())
                 .Select(e => e.id.ToString());
-            return $"Elements ({elements.Count}):\n  " + string.Join("\n  ", names);
+            return $"Elements ({elements.Count}):\n" + GroupByInitial(names);
+        }
+
+        private string ListItems()
+        {
+            var categories = new[]
+            {
+                new { Name = "Food", Tag = GameTags.Edible },
+                new { Name = "Seeds", Tag = GameTags.Seed },
+                new { Name = "Medicine", Tag = GameTags.Medicine },
+                new { Name = "Ore", Tag = GameTags.Ore },
+            };
+
+            var lines = new List<string>();
+            var seen = new HashSet<string>();
+
+            foreach (var cat in categories)
+            {
+                var prefabs = Assets.GetPrefabsWithTag(cat.Tag);
+                if (prefabs == null || prefabs.Count == 0) continue;
+                var names = prefabs
+                    .Select(p => p.GetComponent<KPrefabID>()?.PrefabTag.Name)
+                    .Where(n => n != null)
+                    .OrderBy(n => n)
+                    .ToList();
+                foreach (var n in names) seen.Add(n);
+                lines.Add($"  {cat.Name}: {string.Join(", ", names)}");
+            }
+
+            // Everything else that's pickupable but not in the above categories
+            var misc = Assets.GetPrefabsWithTag(GameTags.Pickupable);
+            if (misc != null)
+            {
+                var others = misc
+                    .Select(p => p.GetComponent<KPrefabID>()?.PrefabTag.Name)
+                    .Where(n => n != null && !seen.Contains(n))
+                    .OrderBy(n => n)
+                    .ToList();
+                if (others.Count > 0)
+                    lines.Add($"  Other: {string.Join(", ", others)}");
+            }
+
+            return lines.Count > 0 ? "Items:\n" + string.Join("\n", lines) : "No items found";
+        }
+
+        private static string GroupByInitial(IEnumerable<string> items)
+        {
+            var groups = items.GroupBy(s => char.ToUpper(s[0])).OrderBy(g => g.Key);
+            return string.Join("\n", groups.Select(g => $"  {g.Key}: {string.Join(", ", g)}"));
         }
     }
 }

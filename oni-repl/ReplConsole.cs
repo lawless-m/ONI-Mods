@@ -27,11 +27,12 @@ namespace OniRepl
         {
             Instance = this;
             engine.RegisterWord(new Words.HelpWord(engine));
-            engine.RegisterWord(new Words.SpawnWord());
-            engine.RegisterWord(new Words.PriorityWord());
             engine.RegisterWord(new Words.BuildWord());
-            engine.RegisterWord(new Words.BuiltWord());
-            engine.RegisterWord(new Words.FillWord());
+            engine.RegisterWord(new Words.DigWord());
+            engine.RegisterWord(new Words.SpawnWord());
+            engine.RegisterWord(new Words.CritterWord());
+            engine.RegisterWord(new Words.ItemWord());
+            engine.RegisterWord(new Words.PriorityWord());
             engine.RegisterWord(new Words.WaitWord(engine));
             engine.RegisterWord(new Words.ClearWord(engine));
             engine.RegisterWord(new Words.InfoWord());
@@ -40,13 +41,6 @@ namespace OniRepl
             engine.RegisterWord(new Words.DirectionWord("right", 1, 0));
             engine.RegisterWord(new Words.DirectionWord("up", 0, 1));
             engine.RegisterWord(new Words.DirectionWord("down", 0, -1));
-            engine.RegisterWord(new Words.DigWord());
-            engine.RegisterWord(new Words.DupWord());
-            engine.RegisterWord(new Words.DropWord());
-            engine.RegisterWord(new Words.SwapWord());
-            engine.RegisterWord(new Words.RotWord());
-            engine.RegisterWord(new Words.PrintStackWord());
-            engine.RegisterWord(new Words.ResetWord());
             engine.RegisterWord(new Words.SaveWord(engine));
             engine.RegisterWord(new Words.LoadWord(engine));
             engine.RegisterWord(new Words.FontSizeWord());

@@ -5,53 +5,16 @@ using System.Text.RegularExpressions;
 
 namespace OniRepl
 {
-    public enum ValueType { Element, Quantity, Location, Critter, Building, Number, Symbol }
-
-    public struct StackValue
+    public static class Registers
     {
-        public ValueType Type;
-        public SimHashes Element;
-        public float Kg;
-        public int Cell;
-        public Tag CritterTag;
-        public BuildingDef BuildingDef;
-        public int IntValue;
-        public string Raw;
-
-        public static StackValue MakeElement(SimHashes hash, string raw) =>
-            new StackValue { Type = ValueType.Element, Element = hash, Raw = raw };
-
-        public static StackValue MakeQuantity(float kg, string raw) =>
-            new StackValue { Type = ValueType.Quantity, Kg = kg, Raw = raw };
-
-        public static StackValue MakeLocation(int cell, string raw) =>
-            new StackValue { Type = ValueType.Location, Cell = cell, Raw = raw };
-
-        public static StackValue MakeCritter(Tag tag, string raw) =>
-            new StackValue { Type = ValueType.Critter, CritterTag = tag, Raw = raw };
-
-        public static StackValue MakeBuilding(BuildingDef def, string raw) =>
-            new StackValue { Type = ValueType.Building, BuildingDef = def, Raw = raw };
-
-        public static StackValue MakeNumber(int value, string raw) =>
-            new StackValue { Type = ValueType.Number, IntValue = value, Raw = raw };
-
-        public static StackValue MakeSymbol(string raw) =>
-            new StackValue { Type = ValueType.Symbol, Raw = raw };
-
-        public override string ToString()
-        {
-            switch (Type)
-            {
-                case ValueType.Element: return $"[Element: {Raw}]";
-                case ValueType.Quantity: return $"[Quantity: {Kg}kg]";
-                case ValueType.Location: return $"[Location: cell {Cell}]";
-                case ValueType.Critter: return $"[Critter: {Raw}]";
-                case ValueType.Building: return $"[Building: {Raw}]";
-                case ValueType.Number: return $"[Number: {IntValue}]";
-                default: return $"[Symbol: {Raw}]";
-            }
-        }
+        public static int Cell = Grid.InvalidCell;
+        public static int Priority = 5;
+        public static SimHashes Material;
+        public static BuildingDef Building;
+        public static int Count;
+        public static float Quantity = 100f;
+        public static Tag Critter = Tag.Invalid;
+        public static string Symbol;
     }
 
     public interface IWord
@@ -59,12 +22,11 @@ namespace OniRepl
         string Name { get; }
         string Help { get; }
         bool SuppressAchievements { get; }
-        string Execute(Stack<StackValue> stack);
+        string Execute();
     }
 
     public class ForthEngine
     {
-        public readonly Stack<StackValue> DataStack = new Stack<StackValue>();
         private readonly Dictionary<string, IWord> builtins = new Dictionary<string, IWord>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, List<string>> userWords = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -116,12 +78,7 @@ namespace OniRepl
                 // Handle do...loop: N do body... loop
                 if (tokens[i].Equals("do", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (DataStack.Count == 0 || DataStack.Peek().Type != ValueType.Number)
-                    {
-                        output.Add("Error: do expects a number on stack. E.g.: 3 do build up loop");
-                        break;
-                    }
-                    int count = DataStack.Pop().IntValue;
+                    int count = Registers.Count;
 
                     var body = new List<string>();
                     int depth = 1;
@@ -151,10 +108,8 @@ namespace OniRepl
                             output.Add(loopResult);
                         if (Suspended)
                         {
-                            // Queue remaining iterations as flat body tokens
                             for (int remaining = n + 1; remaining < count; remaining++)
                                 continuation.AddRange(body);
-                            // Then tokens after loop
                             for (int j = i + 1; j < tokens.Count; j++)
                                 continuation.Add(tokens[j]);
                             break;
@@ -197,7 +152,6 @@ namespace OniRepl
 
                 if (Suspended)
                 {
-                    // Save remaining tokens as continuation
                     for (int j = i + 1; j < tokens.Count; j++)
                         continuation.Add(tokens[j]);
                     break;
@@ -216,11 +170,7 @@ namespace OniRepl
                 {
                     if (word.SuppressAchievements && Game.Instance != null)
                         Game.Instance.debugWasUsed = true;
-                    return word.Execute(DataStack);
-                }
-                catch (InvalidOperationException)
-                {
-                    return $"Error: stack underflow in '{token}'";
+                    return word.Execute();
                 }
                 catch (Exception ex)
                 {
@@ -240,7 +190,6 @@ namespace OniRepl
 
                     if (Suspended)
                     {
-                        // Save remaining body tokens, then outer tokens get appended by caller
                         for (int j = i + 1; j < body.Count; j++)
                             continuation.Add(body[j]);
                         break;
@@ -249,12 +198,12 @@ namespace OniRepl
                 return output.Count > 0 ? string.Join("\n", output) : null;
             }
 
-            // Try parse as value and push
-            PushValue(token);
+            // Set register
+            SetRegister(token);
             return null;
         }
 
-        private void PushValue(string token)
+        private void SetRegister(string token)
         {
             // Quantity: 1000kg, 500g, 1t
             var match = QuantityRegex.Match(token);
@@ -262,71 +211,64 @@ namespace OniRepl
             {
                 float value = float.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
                 string unit = match.Groups[2].Value.ToLowerInvariant();
-                float kg = unit == "g" ? value / 1000f : unit == "t" ? value * 1000f : value;
-                DataStack.Push(StackValue.MakeQuantity(kg, token));
+                Registers.Quantity = unit == "g" ? value / 1000f : unit == "t" ? value * 1000f : value;
                 return;
             }
 
             // Plain integer
             if (int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intVal))
             {
-                DataStack.Push(StackValue.MakeNumber(intVal, token));
+                Registers.Count = intVal;
                 return;
             }
 
             // Location keywords
             if (token.Equals("cursor", StringComparison.OrdinalIgnoreCase))
             {
-                int c = LocationResolver.CursorCell();
-                Words.BuildState.Cell = c;
-                DataStack.Push(StackValue.MakeLocation(c, token));
+                Registers.Cell = LocationResolver.CursorCell();
                 return;
             }
             if (token.Equals("printer", StringComparison.OrdinalIgnoreCase))
             {
-                int c = LocationResolver.PrinterCell();
-                Words.BuildState.Cell = c;
-                DataStack.Push(StackValue.MakeLocation(c, token));
+                Registers.Cell = LocationResolver.PrinterCell();
                 return;
             }
 
             // Coordinate pair: x,y
             if (LocationResolver.TryParseCoords(token, out int cell))
             {
-                Words.BuildState.Cell = cell;
-                DataStack.Push(StackValue.MakeLocation(cell, token));
+                Registers.Cell = cell;
                 return;
             }
 
             // Element name
             if (ElementResolver.TryResolve(token, out SimHashes hash))
             {
-                DataStack.Push(StackValue.MakeElement(hash, token));
+                Registers.Material = hash;
                 return;
             }
 
             // Critter name
             if (CritterResolver.TryResolve(token, out Tag critterTag))
             {
-                DataStack.Push(StackValue.MakeCritter(critterTag, token));
+                Registers.Critter = critterTag;
                 return;
             }
 
             // Building name
             if (BuildingResolver.TryResolve(token, out BuildingDef buildingDef))
             {
-                DataStack.Push(StackValue.MakeBuilding(buildingDef, token));
+                Registers.Building = buildingDef;
                 return;
             }
 
             // Fallback: symbol
-            DataStack.Push(StackValue.MakeSymbol(token));
+            Registers.Symbol = token;
         }
 
         private List<string> Tokenize(string input)
         {
             var tokens = new List<string>();
-            // Strip comments (backslash to end of line)
             foreach (var line in input.Split('\n'))
             {
                 var clean = line;

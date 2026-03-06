@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace OniRepl.Words
@@ -9,13 +8,9 @@ namespace OniRepl.Words
         public string Help => "dig — Dig at current position. E.g.: cursor dig | Chain: cursor dig right dig right dig";
         public bool SuppressAchievements => false;
 
-        public string Execute(Stack<StackValue> stack)
+        public string Execute()
         {
-            // Discard location on top if present (already captured in BuildState)
-            if (stack.Count > 0 && stack.Peek().Type == ValueType.Location)
-                stack.Pop();
-
-            int cell = BuildState.Cell;
+            int cell = Registers.Cell;
             if (!Grid.IsValidCell(cell))
                 return "Error: no position set (use cursor, printer, or x,y first)";
 
@@ -31,9 +26,9 @@ namespace OniRepl.Words
 
             var prioritizable = go.GetComponent<Prioritizable>();
             if (prioritizable != null)
-                prioritizable.SetMasterPriority(new PrioritySetting(PriorityScreen.PriorityClass.basic, BuildState.Priority));
+                prioritizable.SetMasterPriority(new PrioritySetting(PriorityScreen.PriorityClass.basic, Registers.Priority));
 
-            return $"Dig order at cell {cell} p{BuildState.Priority}";
+            return $"Dig order at cell {cell} p{Registers.Priority}";
         }
     }
 }

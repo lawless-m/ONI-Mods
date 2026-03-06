@@ -2,4 +2,4 @@ supportedContent: ALL
 minimumSupportedBuild: 0
 APIVersion: 2
 version: 1.0.0
-description: In-game Forth-like REPL console for runtime game manipulation
+description: In-game REPL console for building, digging, and spawning

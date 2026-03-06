@@ -14,7 +14,7 @@ namespace OniRepl.Words
         public string Help => "save — Save user-defined words to init.forth";
         public bool SuppressAchievements => false;
 
-        public string Execute(Stack<StackValue> stack)
+        public string Execute()
         {
             var words = engine.UserWords;
             if (words.Count == 0)
@@ -43,20 +43,19 @@ namespace OniRepl.Words
         public string Help => "load — Load init.forth. Or: filename load — Load a .forth file";
         public bool SuppressAchievements => false;
 
-        public string Execute(Stack<StackValue> stack)
+        public string Execute()
         {
             string filename = "init.forth";
-            if (stack.Count > 0 && stack.Peek().Type == ValueType.Symbol)
+            if (!string.IsNullOrEmpty(Registers.Symbol))
             {
-                var sym = stack.Pop();
-                filename = sym.Raw;
+                filename = Registers.Symbol;
                 if (!filename.EndsWith(".forth"))
                     filename += ".forth";
             }
 
             var path = Path.Combine(SaveWord.ModDirectory, filename);
             if (!File.Exists(path))
-                return $"File not found: {filename}";
+                return $"File not found: {path}";
 
             var content = File.ReadAllText(path);
             var result = engine.Execute(content);
