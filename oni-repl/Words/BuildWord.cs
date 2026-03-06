@@ -59,7 +59,9 @@ namespace OniRepl.Words
         internal static GameObject PlaceBuildOrder(BuildingDef def, int cell, Tag[] materials)
         {
             var pos = Grid.CellToPosCBC(cell, def.SceneLayer);
-            var go = def.TryPlace(null, pos, Orientation.Neutral, materials, 0);
+            var orientation = Registers.Orientation;
+            Registers.Orientation = Orientation.Neutral;
+            var go = def.TryPlace(null, pos, orientation, materials, 0);
             if (go == null) return null;
 
             var prioritizable = go.GetComponent<Prioritizable>();

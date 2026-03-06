@@ -58,6 +58,9 @@ All name lookups are case-insensitive with prefix matching — type just enough 
 | `right` | Move position x + 1 |
 | `up` | Move position y + 1 |
 | `down` | Move position y - 1 |
+| `flip` | Toggle orientation (Neutral → FlipH → FlipV) |
+
+`flip` is one-shot — `build` resets orientation to Neutral after placing.
 
 #### Digging
 
@@ -182,6 +185,7 @@ Copy to your ONI mods folder:
 | `Words/BuildWord.cs` | `build`, `priority`, `wait`, `clear` |
 | `Words/DigWord.cs` | `dig` |
 | `Words/DirectionWords.cs` | `left`, `right`, `up`, `down` |
+| `Words/FlipWord.cs` | `flip` (building orientation) |
 | `Words/SpawnWord.cs` | `spawn` (elements), `critter` |
 | `Words/ItemWord.cs` | `item` (any prefab) |
 | `Words/InfoWord.cs` | `info` (cell inspection) |

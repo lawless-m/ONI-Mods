@@ -15,6 +15,7 @@ namespace OniRepl
         public static float Quantity = 100f;
         public static Tag Critter = Tag.Invalid;
         public static string Symbol;
+        public static Orientation Orientation = Orientation.Neutral;
     }
 
     public interface IWord
