@@ -8,7 +8,7 @@ namespace OniRepl.Words
     {
         public string Name => "list";
         public string Help => "category list — List game objects. E.g.: dupes list, buildings list, buildables list, critters list, elements list, items list, geysers list";
-        public bool SuppressAchievements => false;
+        public bool SuppressAchievements => (Registers.Symbol ?? "").Equals("geysers", System.StringComparison.OrdinalIgnoreCase);
 
         public string Execute()
         {
