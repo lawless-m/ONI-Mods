@@ -276,8 +276,28 @@ namespace OniRepl
                 if (commentIdx >= 0)
                     clean = clean.Substring(0, commentIdx);
 
-                foreach (var token in clean.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries))
-                    tokens.Add(token);
+                bool inQuote = false;
+                var current = new System.Text.StringBuilder();
+                foreach (char c in clean)
+                {
+                    if (c == '"')
+                    {
+                        inQuote = !inQuote;
+                        continue;
+                    }
+                    if (!inQuote && (c == ' ' || c == '\t'))
+                    {
+                        if (current.Length > 0)
+                        {
+                            tokens.Add(current.ToString());
+                            current.Clear();
+                        }
+                        continue;
+                    }
+                    current.Append(c);
+                }
+                if (current.Length > 0)
+                    tokens.Add(current.ToString());
             }
             return tokens;
         }

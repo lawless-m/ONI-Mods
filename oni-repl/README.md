@@ -129,9 +129,10 @@ Words are late-bound — redefining a word changes everything that uses it:
 > save                                   \ save user words to oni.repl
 > load                                   \ reload oni.repl
 > blueprints load                        \ load blueprints.repl
+> "/path/to/my file.repl" load           \ full path (quotes for spaces)
 ```
 
-Words are saved as plain source — editable in any text editor. `oni.repl` auto-loads on startup.
+Words are saved as plain source — editable in any text editor. `oni.repl` auto-loads on startup. Full paths work for `load` — use quotes if the path contains spaces.
 
 ### Display
 

@@ -53,7 +53,7 @@ namespace OniRepl.Words
                     filename += ".repl";
             }
 
-            var path = Path.Combine(SaveWord.ModDirectory, filename);
+            var path = Path.IsPathRooted(filename) ? filename : Path.Combine(SaveWord.ModDirectory, filename);
             if (!File.Exists(path))
                 return $"File not found: {path}";
 
