@@ -11,9 +11,9 @@ namespace OniRepl.Words
             int count = 0;
             for (int i = 0; i < Grid.CellCount; i++)
             {
-                if (Grid.Revealed[i] == 0)
+                if (!Grid.Revealed[i])
                 {
-                    Grid.Revealed[i] = 1;
+                    Grid.Revealed[i] = true;
                     count++;
                 }
                 Grid.Visible[i] = byte.MaxValue;
