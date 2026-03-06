@@ -103,7 +103,7 @@ All name lookups are case-insensitive with prefix matching — type just enough 
 > critters list                          \ living critters
 > dupes list                             \ duplicant names
 > items list                             \ spawnable items (food, seeds, medicine, ore)
-> geysers list                           \ geyser types and locations
+> geysers list                           \ geyser types and locations (DISABLES ACHIEVEMENTS)
 ```
 
 ### Defining Words
