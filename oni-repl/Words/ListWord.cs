@@ -90,7 +90,11 @@ namespace OniRepl.Words
             var names = elements
                 .Where(e => e.id != SimHashes.Vacuum && e.id != SimHashes.Void)
                 .OrderBy(e => e.id.ToString())
-                .Select(e => e.id.ToString());
+                .Select(e =>
+                {
+                    var t = e.defaultValues.temperature;
+                    return t > 0 ? $"{e.id} ({t:0}K)" : e.id.ToString();
+                });
             return $"Elements ({elements.Count}):\n" + GroupByInitial(names);
         }
 
