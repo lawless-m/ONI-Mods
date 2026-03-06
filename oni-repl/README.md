@@ -104,6 +104,7 @@ All name lookups are case-insensitive with prefix matching — type just enough 
 > dupes list                             \ duplicant names
 > items list                             \ spawnable items (food, seeds, medicine, ore)
 > geysers list                           \ geyser types and locations (DISABLES ACHIEVEMENTS)
+> 45,82 goto                             \ move camera to coordinates
 ```
 
 ### Defining Words
@@ -194,6 +195,7 @@ Copy to your ONI mods folder:
 | `Words/DirectionWords.cs` | `left`, `right`, `up`, `down` |
 | `Words/FlipWord.cs` | `flip` (building orientation) |
 | `Words/RevealWord.cs` | `reveal` (remove fog of war) |
+| `Words/GotoWord.cs` | `goto` (camera navigation) |
 | `Words/SpawnWord.cs` | `spawn` (elements), `critter` |
 | `Words/ItemWord.cs` | `item` (any prefab) |
 | `Words/InfoWord.cs` | `info` (cell inspection) |
