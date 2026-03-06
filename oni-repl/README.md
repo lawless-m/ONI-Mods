@@ -79,6 +79,12 @@ All name lookups are case-insensitive with prefix matching — type just enough 
 
 `spawn` creates element mass in the simulation. `item` drops a loose object.
 
+#### Reveal (DISABLES ACHIEVEMENTS)
+
+```
+> reveal                                 \ remove all fog of war
+```
+
 #### Waiting
 
 ```
@@ -186,6 +192,7 @@ Copy to your ONI mods folder:
 | `Words/DigWord.cs` | `dig` |
 | `Words/DirectionWords.cs` | `left`, `right`, `up`, `down` |
 | `Words/FlipWord.cs` | `flip` (building orientation) |
+| `Words/RevealWord.cs` | `reveal` (remove fog of war) |
 | `Words/SpawnWord.cs` | `spawn` (elements), `critter` |
 | `Words/ItemWord.cs` | `item` (any prefab) |
 | `Words/InfoWord.cs` | `info` (cell inspection) |

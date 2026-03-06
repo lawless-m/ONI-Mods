@@ -42,6 +42,7 @@ namespace OniRepl
             engine.RegisterWord(new Words.DirectionWord("up", 0, 1));
             engine.RegisterWord(new Words.DirectionWord("down", 0, -1));
             engine.RegisterWord(new Words.FlipWord());
+            engine.RegisterWord(new Words.RevealWord());
             engine.RegisterWord(new Words.SaveWord(engine));
             engine.RegisterWord(new Words.LoadWord(engine));
             engine.RegisterWord(new Words.FontSizeWord());
