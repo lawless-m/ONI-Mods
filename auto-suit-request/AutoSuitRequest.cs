@@ -44,7 +44,12 @@ namespace AutoSuitRequest
             __instance.empty.configured.ToggleScheduleCallback(
                 "AutoRequestSuit",
                 (SuitLocker.StatesInstance smi) => 600f,
-                (SuitLocker.StatesInstance smi) => smi.master.ConfigRequestSuit());
+                (SuitLocker.StatesInstance smi) =>
+                {
+                    var op = smi.master.GetComponent<Operational>();
+                    if (op == null || op.GetFlag(BuildingEnabledButton.EnabledFlag))
+                        smi.master.ConfigRequestSuit();
+                });
         }
     }
 
