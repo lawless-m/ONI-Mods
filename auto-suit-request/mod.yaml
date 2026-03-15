@@ -1,0 +1,3 @@
+staticID: AutoSuitRequest
+title: "Auto Suit Request"
+description: "Automatically requests suits for new docks and replaces lost suits after one cycle"

@@ -1,0 +1,5 @@
+supportedContent: ALL
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: Automatically requests suits for new docks and replaces lost suits after one cycle
