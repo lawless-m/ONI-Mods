@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>DupeTherapist</AssemblyName>
+    <RootNamespace>DupeTherapist</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ONI_INSTALL_DIR Condition="'$(ONI_INSTALL_DIR)' == ''">$(HOME)/.local/share/Steam/steamapps/common/OxygenNotIncluded</ONI_INSTALL_DIR>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <MOD_DIR>$(HOME)/.config/unity3d/Klei/Oxygen Not Included/mods/Dev/DupeTherapist</MOD_DIR>
+  </PropertyGroup>
+
+  <Target Name="Deploy" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MOD_DIR)" />
+    <Copy SourceFiles="mod.yaml;mod_info.yaml" DestinationFolder="$(MOD_DIR)" />
+    <Copy SourceFiles="web/index.html" DestinationFolder="$(MOD_DIR)/web" />
+  </Target>
+</Project>

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dupe Therapist</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; }
+
+.toolbar {
+  position: sticky; top: 0; z-index: 100;
+  background: #16213e; padding: 10px 20px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 2px solid #0f3460;
+}
+.toolbar h1 { font-size: 18px; color: #e94560; }
+button {
+  background: #0f3460; color: #e0e0e0; border: 1px solid #533483;
+  padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
+}
+button:hover { background: #533483; }
+button.active { background: #533483; border-color: #e94560; }
+.commit-btn { background: #e94560; border-color: #e94560; }
+.commit-btn:hover { background: #c23152; }
+.commit-btn:disabled { background: #444; border-color: #444; cursor: default; }
+.badge {
+  background: #e94560; color: white; border-radius: 10px;
+  padding: 2px 8px; font-size: 12px; margin-left: 4px; display: none;
+}
+.status { font-size: 12px; color: #888; margin-left: auto; }
+.sep { width: 1px; height: 24px; background: #533483; }
+
+/* Grid */
+.grid-wrap { overflow: auto; max-height: calc(100vh - 50px); }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #2a2a4a; padding: 3px 5px; text-align: center; font-size: 13px; }
+thead th { position: sticky; background: #16213e; z-index: 10; }
+tr.group-row th { top: 0; z-index: 11; }
+tr.col-row th { top: 28px; z-index: 10; }
+
+/* Group header */
+th.group {
+  background: #0f3460; cursor: pointer; font-size: 12px; font-weight: bold;
+  padding: 4px 8px; white-space: nowrap; user-select: none;
+  border-left: 3px solid #533483;
+}
+th.group:hover { background: #533483; }
+th.group .arrow { font-size: 10px; margin-right: 4px; }
+th.collapsed-placeholder {
+  width: 20px; min-width: 20px; max-width: 20px;
+  background: #0f3460; cursor: pointer; writing-mode: vertical-lr;
+  text-orientation: mixed; font-size: 10px; color: #888; padding: 2px;
+  border-left: 3px solid #533483;
+}
+
+th.rotated {
+  height: 120px; white-space: nowrap; vertical-align: bottom; padding-bottom: 8px;
+  min-width: 34px;
+}
+th.rotated span {
+  display: block; transform: rotate(-55deg); transform-origin: center center;
+  width: 28px; font-size: 11px; line-height: 1.1;
+}
+th.sort { cursor: pointer; }
+th.sort:hover { color: #e94560; }
+
+td.name {
+  position: sticky; left: 0; background: #1a1a2e; z-index: 5;
+  text-align: left; font-weight: bold; padding: 4px 10px; white-space: nowrap;
+  cursor: pointer;
+}
+td.name:hover { color: #e94560; }
+td.info {
+  text-align: left; font-size: 11px; color: #aaa;
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.interest { color: #4fc3f7; }
+.trait { color: #ce93d8; }
+.skill { color: #81c784; }
+.equip { color: #ffa726; }
+.bionic-tag { color: #00e5ff; font-size: 10px; margin-left: 4px; }
+td.vital { font-size: 12px; white-space: nowrap; }
+.v-good { color: #81c784; }
+.v-warn { color: #ffb74d; }
+.v-bad { color: #e57373; }
+.v-neutral { color: #aaa; }
+
+td.prio {
+  width: 34px; min-width: 34px; height: 28px;
+  cursor: pointer; user-select: none; font-weight: bold; font-size: 14px;
+}
+td.prio:hover { outline: 2px solid #e94560; outline-offset: -2px; }
+td.prio.changed { outline: 2px solid #ffd700; outline-offset: -2px; }
+
+td.exposure { font-size: 11px; min-width: 34px; }
+td.exposure.None { color: #555; }
+td.exposure.Contact { background: hsl(50,40%,20%); color: #dda; }
+td.exposure.Exposed { background: hsl(30,50%,22%); color: #eca; }
+td.exposure.Contracted { background: hsl(10,55%,25%); color: #eaa; }
+td.exposure.Sick { background: hsl(0,60%,30%); color: #fbb; font-weight: bold; }
+
+td.collapsed-cell {
+  width: 20px; min-width: 20px; max-width: 20px;
+  background: #12122a; border-left: 3px solid #533483;
+}
+
+/* Selection */
+tr.selected td { background-color: rgba(233,69,96,0.12) !important; }
+tr.selected td.name { background: #2a1a2e !important; }
+td.sel-check { width: 24px; min-width: 24px; padding: 0; cursor: pointer; }
+td.sel-check input { cursor: pointer; }
+
+/* Bulk bar */
+.bulk-bar {
+  display: none; position: sticky; top: 50px; z-index: 99;
+  background: #1a0f2e; border: 2px solid #e94560; border-radius: 0 0 8px 8px;
+  padding: 8px 16px; margin: 0 20px;
+  align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px;
+}
+.bulk-bar.visible { display: flex; }
+.bulk-bar select, .bulk-bar input[type=number] {
+  background: #0f3460; color: #e0e0e0; border: 1px solid #533483;
+  padding: 3px 6px; border-radius: 4px; font-size: 13px;
+}
+.bulk-bar input[type=number] { width: 50px; }
+.bulk-bar .label { color: #888; }
+.bulk-bar button { padding: 4px 10px; font-size: 12px; }
+.bulk-bar .count { color: #e94560; font-weight: bold; }
+
+/* Chart view */
+.chart-view { display: none; padding: 20px; max-height: calc(100vh - 50px); overflow: auto; }
+.chart-view.visible { display: block; }
+.chart-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.chart-header h2 { color: #e94560; font-size: 16px; }
+.chart-header select {
+  background: #0f3460; color: #e0e0e0; border: 1px solid #533483;
+  padding: 4px 8px; border-radius: 4px; font-size: 13px;
+}
+.chart-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+}
+.chart-card { background: #16213e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px; }
+.chart-card h3 { font-size: 13px; color: #aaa; margin-bottom: 8px; }
+.chart-card canvas { width: 100%; height: 150px; }
+.no-data { color: #555; font-style: italic; padding: 40px; text-align: center; }
+
+/* Suggest view */
+.suggest-schedule { margin-bottom: 24px; }
+.suggest-schedule h3 { color: #e94560; font-size: 15px; margin-bottom: 8px; }
+.suggest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.suggest-card {
+  background: #16213e; border: 1px solid #2a2a4a; border-radius: 6px; padding: 10px;
+}
+.suggest-card .dupe-name { font-weight: bold; margin-bottom: 4px; }
+.suggest-card .role { color: #4fc3f7; font-size: 12px; }
+.suggest-card .reason { color: #888; font-size: 11px; }
+.suggest-card .change-list { font-size: 11px; color: #aaa; margin-top: 4px; }
+.suggest-card .change-list .up { color: #81c784; }
+.suggest-card .change-list .down { color: #e57373; }
+.coverage-warn { background: #2a1a0a; border-color: #e94560; padding: 8px 14px; border-radius: 6px; margin-bottom: 12px; color: #ffb74d; font-size: 13px; }
+.coverage-ok { color: #555; font-size: 12px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Dupe Therapist</h1>
+  <button id="gridBtn" class="active" onclick="showView('grid')">Grid</button>
+  <button id="chartBtn" onclick="showView('chart')">Charts</button>
+  <button id="suggestBtn" onclick="showView('suggest')">Suggest</button>
+  <div class="sep"></div>
+  <button onclick="refresh()">Refresh</button>
+  <button class="commit-btn" id="commitBtn" onclick="commitChanges()" disabled>
+    Commit<span class="badge" id="badge">0</span>
+  </button>
+  <button onclick="resetChanges()">Reset</button>
+  <span class="status" id="status">Loading...</span>
+</div>
+
+<div class="bulk-bar" id="bulkBar">
+  <span class="count" id="bulkCount">0</span><span class="label">selected</span>
+  <div class="sep"></div>
+  <button onclick="bulkZeroAll()">Zero All</button>
+  <button onclick="bulkSetAll(5)">Default (5)</button>
+  <div class="sep"></div>
+  <span class="label">Only:</span>
+  <select id="bulkOnlySelect" onchange="bulkOnly(this.value); this.selectedIndex=0;">
+    <option value="">pick errand...</option>
+  </select>
+  <div class="sep"></div>
+  <span class="label">Set</span>
+  <select id="bulkChoreSelect"><option value="">errand...</option></select>
+  <span class="label">to</span>
+  <input type="number" id="bulkPrioVal" min="0" max="9" value="9">
+  <button onclick="bulkSetOne()">Apply</button>
+  <div class="sep"></div>
+  <button onclick="clearSelection()">Clear</button>
+</div>
+<div class="grid-wrap" id="gridView">
+  <table>
+    <thead>
+      <tr class="group-row" id="groupRow"></tr>
+      <tr class="col-row" id="colRow"></tr>
+    </thead>
+    <tbody id="body"></tbody>
+  </table>
+</div>
+
+<div class="chart-view" id="chartView">
+  <div class="chart-header">
+    <h2 id="chartTitle">Select a dupe</h2>
+    <select id="chartDupe" onchange="renderCharts()"><option value="">-- All dupes --</option></select>
+    <select id="chartVital" onchange="renderCharts()"><option value="">-- All vitals --</option></select>
+  </div>
+  <div class="chart-grid" id="chartGrid"></div>
+</div>
+
+<div class="chart-view" id="suggestView">
+  <div class="chart-header">
+    <h2>Suggestions</h2>
+    <button onclick="applySuggestions()">Apply All Suggestions</button>
+  </div>
+  <div id="suggestContent"></div>
+</div>
+
+<script>
+let data = null;
+let historyData = null;
+let changes = {};
+let sortCol = null;
+let sortAsc = true;
+let currentView = 'grid';
+
+// Collapsed state per group, persisted to localStorage
+let collapsed = JSON.parse(localStorage.getItem('dt-collapsed') || '{}');
+let selected = new Set(); // set of dupe names
+function toggleGroup(g) {
+  collapsed[g] = !collapsed[g];
+  localStorage.setItem('dt-collapsed', JSON.stringify(collapsed));
+  render();
+}
+
+const PRIO_BG = [
+  'hsl(230,15%,15%)', 'hsl(210,40%,22%)', 'hsl(200,45%,25%)',
+  'hsl(170,45%,25%)', 'hsl(140,40%,25%)', 'hsl(90,40%,28%)',
+  'hsl(60,50%,28%)', 'hsl(40,55%,28%)', 'hsl(25,60%,28%)', 'hsl(5,65%,32%)',
+];
+
+const VITALS = [
+  { key: 'stress', label: 'Stress', fmt: v => v + '%',
+    cls: v => v > 60 ? 'v-bad' : v > 30 ? 'v-warn' : 'v-good', color: '#e57373' },
+  { key: 'calories', label: 'Calories', fmt: v => (v/1000).toFixed(1) + 'k',
+    cls: v => v < 1000 ? 'v-bad' : v < 2000 ? 'v-warn' : 'v-good', color: '#ffb74d' },
+  { key: 'morale', label: 'Morale',
+    fmt: (v, d) => v + '/' + (d.vitals?.moraleExpectation ?? 0),
+    cls: (v, d) => v < (d.vitals?.moraleExpectation ?? 0) ? 'v-bad' :
+      v < (d.vitals?.moraleExpectation ?? 0) + 4 ? 'v-warn' : 'v-good', color: '#ce93d8' },
+  { key: 'temperature', label: 'Temp',
+    fmt: v => (typeof v === 'number' ? v.toFixed(1) : v) + 'C',
+    cls: v => v > 40 ? 'v-bad' : v < 30 ? 'v-warn' : 'v-good', color: '#4fc3f7' },
+  { key: 'hitPoints', label: 'HP',
+    cls: v => v < 50 ? 'v-bad' : v < 80 ? 'v-warn' : 'v-good', color: '#81c784' },
+  { key: 'immunity', label: 'Immune',
+    cls: v => v < 30 ? 'v-bad' : v < 60 ? 'v-warn' : 'v-good', color: '#a5d6a7' },
+  { key: 'breath', label: 'Breath',
+    cls: v => v < 30 ? 'v-bad' : v < 60 ? 'v-warn' : 'v-good', color: '#90caf9' },
+  { key: 'bladder', label: 'Bladder',
+    cls: v => v > 80 ? 'v-bad' : v > 60 ? 'v-warn' : 'v-good', color: '#fff176' },
+  { key: 'stamina', label: 'Stamina',
+    cls: v => v < 20 ? 'v-bad' : v < 40 ? 'v-warn' : 'v-good', color: '#80cbc4' },
+  { key: 'decor', label: 'Decor', cls: () => 'v-neutral', color: '#b39ddb' },
+  { key: 'rads', label: 'Rads',
+    cls: v => v > 200 ? 'v-bad' : v > 50 ? 'v-warn' : 'v-good', color: '#66bb6a' },
+  { key: 'distanceTravelled', label: 'Distance', cls: () => 'v-neutral', color: '#78909c' },
+];
+
+const CORE_ATTRS = [
+  { key: 'Strength', label: 'Str', color: '#e57373' },
+  { key: 'Athletics', label: 'Ath', color: '#ffb74d' },
+  { key: 'Learning', label: 'Lrn', color: '#4fc3f7' },
+  { key: 'Cooking', label: 'Cook', color: '#ff8a65' },
+  { key: 'Caring', label: 'Care', color: '#f48fb1' },
+  { key: 'Art', label: 'Art', color: '#ce93d8' },
+  { key: 'Digging', label: 'Dig', color: '#a1887f' },
+  { key: 'Construction', label: 'Build', color: '#90a4ae' },
+  { key: 'Machinery', label: 'Mech', color: '#80cbc4' },
+  { key: 'Ranching', label: 'Ranch', color: '#81c784' },
+  { key: 'Botanist', label: 'Farm', color: '#aed581' },
+];
+
+const BIONIC_VITALS = [
+  { key: 'battery', label: 'Battery', fmt: v => (v/1000).toFixed(0) + 'kJ',
+    cls: v => v < 50000 ? 'v-bad' : v < 150000 ? 'v-warn' : 'v-good', color: '#00e5ff' },
+  { key: 'oil', label: 'Oil',
+    cls: v => v < 30 ? 'v-bad' : v < 80 ? 'v-warn' : 'v-good', color: '#ffcc02' },
+  { key: 'gunk', label: 'Gunk',
+    cls: v => v > 80 ? 'v-bad' : v > 50 ? 'v-warn' : 'v-good', color: '#8d6e63' },
+  { key: 'oxygenTank', label: 'O2 Tank', fmt: v => v.toFixed(1) + 'kg',
+    cls: v => v < 0.5 ? 'v-bad' : v < 2 ? 'v-warn' : 'v-good', color: '#4fc3f7' },
+];
+
+const DUPE_COLORS = [
+  '#e94560','#4fc3f7','#81c784','#ffb74d','#ce93d8',
+  '#f48fb1','#80cbc4','#fff176','#90caf9','#a5d6a7',
+  '#ef5350','#42a5f5','#66bb6a','#ffa726','#ab47bc',
+];
+
+function prioBg(p, attr) {
+  let base = PRIO_BG[Math.min(p, 9)];
+  if (attr > 0 && p > 0) {
+    let light = Math.min(attr * 1.5, 20);
+    return base.replace(/(\d+)%\)$/, (_, l) => (parseInt(l) + light) + '%)');
+  }
+  return base;
+}
+
+function showView(view) {
+  currentView = view;
+  document.getElementById('gridView').style.display = view === 'grid' ? '' : 'none';
+  document.getElementById('chartView').className = 'chart-view' + (view === 'chart' ? ' visible' : '');
+  document.getElementById('suggestView').className = 'chart-view' + (view === 'suggest' ? ' visible' : '');
+  document.getElementById('gridBtn').className = view === 'grid' ? 'active' : '';
+  document.getElementById('chartBtn').className = view === 'chart' ? 'active' : '';
+  document.getElementById('suggestBtn').className = view === 'suggest' ? 'active' : '';
+  if (view === 'chart') loadHistory();
+  if (view === 'suggest') renderSuggestions();
+}
+
+async function refresh() {
+  try {
+    const r = await fetch('/api/dupes');
+    data = await r.json();
+    render();
+    document.getElementById('status').textContent =
+      data.dupes.length + ' dupes | ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById('status').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/history');
+    historyData = await r.json();
+    updateChartSelectors();
+    renderCharts();
+  } catch (e) {
+    document.getElementById('chartGrid').innerHTML = '<div class="no-data">No history data yet. Data is recorded every 30 seconds.</div>';
+  }
+}
+
+function updateChartSelectors() {
+  const ds = document.getElementById('chartDupe');
+  const old = ds.value;
+  ds.innerHTML = '<option value="">-- All dupes --</option>';
+  if (historyData) for (const n of Object.keys(historyData).sort())
+    ds.innerHTML += `<option value="${esc(n)}">${esc(n)}</option>`;
+  ds.value = old || '';
+  const vs = document.getElementById('chartVital');
+  const oldV = vs.value;
+  vs.innerHTML = '<option value="">-- All vitals --</option>';
+  VITALS.forEach(v => { vs.innerHTML += `<option value="${v.key}">${v.label}</option>`; });
+  vs.value = oldV || '';
+}
+
+function renderCharts() {
+  const grid = document.getElementById('chartGrid');
+  grid.innerHTML = '';
+  if (!historyData) { grid.innerHTML = '<div class="no-data">No history data yet.</div>'; return; }
+  const dn = document.getElementById('chartDupe').value;
+  const vk = document.getElementById('chartVital').value;
+  const title = document.getElementById('chartTitle');
+
+  if (dn) {
+    title.textContent = dn;
+    const dh = historyData[dn];
+    if (!dh) { grid.innerHTML = '<div class="no-data">No data for this dupe.</div>'; return; }
+    (vk ? VITALS.filter(v => v.key === vk) : VITALS).forEach(vd => {
+      const pts = dh[vd.key];
+      if (!pts || pts.length < 2) return;
+      grid.appendChild(makeChartCard(vd.label, [{ name: dn, points: pts, color: vd.color }]));
+    });
+  } else if (vk) {
+    const vd = VITALS.find(v => v.key === vk);
+    title.textContent = vd.label;
+    const series = []; let idx = 0;
+    for (const [n, dh] of Object.entries(historyData)) {
+      const pts = dh[vk];
+      if (pts && pts.length >= 2) { series.push({ name: n, points: pts, color: DUPE_COLORS[idx++ % DUPE_COLORS.length] }); }
+    }
+    if (!series.length) { grid.innerHTML = '<div class="no-data">No data yet.</div>'; return; }
+    const c = makeChartCard(vd.label + ' — All Dupes', series, true);
+    c.style.gridColumn = '1 / -1';
+    grid.appendChild(c);
+  } else {
+    title.textContent = 'All Dupes';
+    VITALS.forEach(vd => {
+      const series = []; let idx = 0;
+      for (const [n, dh] of Object.entries(historyData)) {
+        const pts = dh[vd.key];
+        if (pts && pts.length >= 2) series.push({ name: n, points: pts, color: DUPE_COLORS[idx++ % DUPE_COLORS.length] });
+      }
+      if (series.length) grid.appendChild(makeChartCard(vd.label, series, series.length <= 8));
+    });
+  }
+}
+
+function makeChartCard(title, series, showLegend = false) {
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+  card.innerHTML = `<h3>${esc(title)}</h3>`;
+  const canvas = document.createElement('canvas');
+  canvas.width = 400; canvas.height = 150;
+  card.appendChild(canvas);
+  if (showLegend && series.length > 1) {
+    const leg = document.createElement('div');
+    leg.style.cssText = 'font-size:11px;margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;';
+    series.forEach(s => { leg.innerHTML += `<span style="color:${s.color}">\u25CF ${esc(s.name)}</span>`; });
+    card.appendChild(leg);
+  }
+  requestAnimationFrame(() => drawChart(canvas, series));
+  return card;
+}
+
+function drawChart(canvas, series) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = { top: 8, right: 8, bottom: 22, left: 40 };
+  const pW = W - pad.left - pad.right, pH = H - pad.top - pad.bottom;
+  let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+  series.forEach(s => s.points.forEach(([x, y]) => {
+    if (x < mnX) mnX = x; if (x > mxX) mxX = x;
+    if (y < mnY) mnY = y; if (y > mxY) mxY = y;
+  }));
+  if (mnY === mxY) { mnY -= 1; mxY += 1; }
+  const rX = mxX - mnX || 1, rY = mxY - mnY;
+  ctx.strokeStyle = '#2a2a4a'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + pH * (1 - i / 4);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText((mnY + rY * i / 4).toFixed(0), pad.left - 4, y + 3);
+  }
+  ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) ctx.fillText('C' + (mnX + rX * i / 4).toFixed(1), pad.left + pW * i / 4, H - 4);
+  series.forEach(s => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 1.5; ctx.beginPath();
+    s.points.forEach(([x, y], i) => {
+      const px = pad.left + ((x - mnX) / rX) * pW, py = pad.top + (1 - (y - mnY) / rY) * pH;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+  });
+}
+
+function render() {
+  if (!data) return;
+  const hasDiseases = data.sicknesses && data.sicknesses.length > 0;
+  const anyBionic = data.dupes.some(d => d.isBionic);
+
+  // Sort
+  let dupes = [...data.dupes];
+  if (sortCol !== null) {
+    dupes.sort((a, b) => {
+      let va, vb;
+      if (sortCol === 'name') { va = a.name; vb = b.name; }
+      else if (sortCol.startsWith('attr:')) {
+        const k = sortCol.slice(5); va = a.coreAttributes?.[k] ?? 0; vb = b.coreAttributes?.[k] ?? 0;
+      } else if (sortCol.startsWith('vital:')) {
+        const k = sortCol.slice(6);
+        va = a.vitals?.[k] ?? a.bionicVitals?.[k] ?? 0;
+        vb = b.vitals?.[k] ?? b.bionicVitals?.[k] ?? 0;
+      } else if (sortCol.startsWith('disease:')) {
+        const d = sortCol.slice(8);
+        const o = { None: 0, Contact: 1, Exposed: 2, Contracted: 3, Sick: 4 };
+        va = o[a.diseaseExposure?.[d]] ?? 0; vb = o[b.diseaseExposure?.[d]] ?? 0;
+      } else {
+        va = getEffective(a.name, sortCol, a.priorities[sortCol] ?? 0);
+        vb = getEffective(b.name, sortCol, b.priorities[sortCol] ?? 0);
+      }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // Define groups
+  const groups = [
+    { id: 'identity', label: 'Identity', cols: 5 }, // traits, interests, skills, equipment, schedule
+    { id: 'attrs', label: 'Attributes', cols: CORE_ATTRS.length },
+    { id: 'vitals', label: 'Vitals', cols: VITALS.length },
+  ];
+  if (anyBionic) groups.push({ id: 'bionic', label: 'Bionic', cols: BIONIC_VITALS.length });
+  groups.push({ id: 'priorities', label: 'Priorities', cols: data.choreGroups.length });
+  if (hasDiseases) groups.push({ id: 'disease', label: 'Disease', cols: data.sicknesses.length });
+
+  // Group header row
+  const gr = document.getElementById('groupRow');
+  let gh = '<th rowspan="2" style="top:0;z-index:12;width:24px;cursor:pointer" onclick="selectAll()">\u2610</th>';
+  gh += '<th rowspan="2" class="sort" onclick="doSort(\'name\')" style="top:0;z-index:12">Dupe</th>';
+  groups.forEach(g => {
+    if (collapsed[g.id]) {
+      gh += `<th class="collapsed-placeholder" rowspan="2" onclick="toggleGroup('${g.id}')" title="Expand ${g.label}">${g.label}</th>`;
+    } else {
+      const arrow = '\u25BC';
+      gh += `<th class="group" colspan="${g.cols}" onclick="toggleGroup('${g.id}')"><span class="arrow">${arrow}</span>${g.label}</th>`;
+    }
+  });
+  gr.innerHTML = gh;
+
+  // Column header row
+  const cr = document.getElementById('colRow');
+  let ch = '';
+
+  // Identity columns
+  if (!collapsed.identity) {
+    ch += '<th>Traits</th><th>Interests</th><th>Skills</th><th>Equipment</th><th>Schedule</th>';
+  }
+  // Attribute columns
+  if (!collapsed.attrs) {
+    CORE_ATTRS.forEach(a => { ch += `<th class="rotated sort" onclick="doSort('attr:${a.key}')"><span>${a.label}</span></th>`; });
+  }
+  // Vital columns
+  if (!collapsed.vitals) {
+    VITALS.forEach(v => { ch += `<th class="rotated sort" onclick="doSort('vital:${v.key}')"><span>${v.label}</span></th>`; });
+  }
+  // Bionic columns
+  if (anyBionic && !collapsed.bionic) {
+    BIONIC_VITALS.forEach(v => { ch += `<th class="rotated sort" onclick="doSort('vital:${v.key}')"><span>${v.label}</span></th>`; });
+  }
+  // Priority columns
+  if (!collapsed.priorities) {
+    data.choreGroups.forEach(cg => { ch += `<th class="rotated sort" onclick="doSort('${cg.id}')"><span>${esc(cg.name)}</span></th>`; });
+  }
+  // Disease columns
+  if (hasDiseases && !collapsed.disease) {
+    data.sicknesses.forEach(s => { ch += `<th class="rotated sort" onclick="doSort('disease:${s.id}')"><span>${esc(s.name)}</span></th>`; });
+  }
+  cr.innerHTML = ch;
+
+  // Body
+  const body = document.getElementById('body');
+  body.innerHTML = '';
+
+  dupes.forEach(dupe => {
+    const tr = document.createElement('tr');
+    if (selected.has(dupe.name)) tr.className = 'selected';
+
+    // Checkbox
+    const chkTd = document.createElement('td');
+    chkTd.className = 'sel-check';
+    chkTd.textContent = selected.has(dupe.name) ? '\u2611' : '\u2610';
+    chkTd.onclick = (e) => { e.stopPropagation(); toggleSelect(dupe.name, e); };
+    tr.appendChild(chkTd);
+
+    // Name
+    const nameTd = document.createElement('td');
+    nameTd.className = 'name';
+    nameTd.innerHTML = esc(dupe.name) + (dupe.isBionic ? '<span class="bionic-tag">[B]</span>' : '');
+    nameTd.onclick = () => { document.getElementById('chartDupe').value = dupe.name; showView('chart'); };
+    tr.appendChild(nameTd);
+
+    // Identity group
+    if (collapsed.identity) {
+      tr.appendChild(emptyCell());
+    } else {
+      tr.innerHTML += `<td class="info" title="${esc((dupe.traits||[]).join(', '))}"><span class="trait">${esc((dupe.traits||[]).join(', '))}</span></td>`;
+      tr.innerHTML += `<td class="info" title="${esc((dupe.interests||[]).join(', '))}"><span class="interest">${esc((dupe.interests||[]).join(', '))}</span></td>`;
+      tr.innerHTML += `<td class="info" title="${esc((dupe.skills||[]).join(', '))}"><span class="skill">${esc((dupe.skills||[]).join(', '))}</span></td>`;
+      const en = (dupe.equipment || []).map(e => e.name || e.id).join(', ');
+      tr.innerHTML += `<td class="info" title="${esc(en)}"><span class="equip">${esc(en || '-')}</span></td>`;
+      tr.innerHTML += `<td class="info">${esc(dupe.schedule || '-')}</td>`;
+    }
+
+    // Attributes group
+    if (collapsed.attrs) {
+      tr.appendChild(emptyCell());
+    } else {
+      CORE_ATTRS.forEach(adef => {
+        const val = dupe.coreAttributes?.[adef.key] ?? 0;
+        const td = document.createElement('td');
+        td.className = 'vital';
+        td.textContent = val;
+        td.style.color = val > 10 ? '#81c784' : val > 5 ? '#aaa' : val > 0 ? '#aaa' : '#555';
+        td.title = `${adef.label}: ${val}`;
+        tr.appendChild(td);
+      });
+    }
+
+    // Vitals group
+    if (collapsed.vitals) {
+      tr.appendChild(emptyCell());
+    } else {
+      VITALS.forEach(vdef => {
+        const val = dupe.vitals?.[vdef.key] ?? 0;
+        const display = vdef.fmt ? vdef.fmt(val, dupe) : val;
+        const cls = vdef.cls ? vdef.cls(val, dupe) : 'v-neutral';
+        const td = document.createElement('td');
+        td.className = `vital ${cls}`;
+        td.textContent = display;
+        td.title = `${vdef.label}: ${display}`;
+        tr.appendChild(td);
+      });
+    }
+
+    // Bionic group
+    if (anyBionic) {
+      if (collapsed.bionic) {
+        tr.appendChild(emptyCell());
+      } else {
+        BIONIC_VITALS.forEach(vdef => {
+          const val = dupe.bionicVitals?.[vdef.key] ?? 0;
+          const display = vdef.fmt ? vdef.fmt(val, dupe) : val;
+          const cls = dupe.isBionic ? (vdef.cls ? vdef.cls(val, dupe) : 'v-neutral') : 'v-neutral';
+          const td = document.createElement('td');
+          td.className = `vital ${cls}`;
+          td.textContent = dupe.isBionic ? display : '-';
+          tr.appendChild(td);
+        });
+      }
+    }
+
+    // Priorities group
+    if (collapsed.priorities) {
+      tr.appendChild(emptyCell());
+    } else {
+      data.choreGroups.forEach(cg => {
+        const orig = dupe.priorities[cg.id] ?? 0;
+        const c = changes[dupe.name]?.[cg.id];
+        const p = c !== undefined ? c : orig;
+        const isChanged = c !== undefined && c !== orig;
+        const attr = dupe.attributes?.[cg.id] ?? 0;
+        const td = document.createElement('td');
+        td.className = 'prio' + (isChanged ? ' changed' : '');
+        td.textContent = p === 0 ? '' : p;
+        td.style.backgroundColor = prioBg(p, attr);
+        td.title = `${cg.name}: ${p} (skill: ${attr})`;
+        td.onmousedown = e => {
+          e.preventDefault();
+          let np;
+          if (e.button === 0) np = p >= 9 ? 0 : p + 1;
+          else if (e.button === 2) np = p <= 0 ? 9 : p - 1;
+          else return;
+          if (!changes[dupe.name]) changes[dupe.name] = {};
+          if (np === orig) {
+            delete changes[dupe.name][cg.id];
+            if (!Object.keys(changes[dupe.name]).length) delete changes[dupe.name];
+          } else {
+            changes[dupe.name][cg.id] = np;
+          }
+          updateBadge();
+          render();
+        };
+        td.oncontextmenu = e => e.preventDefault();
+        tr.appendChild(td);
+      });
+    }
+
+    // Disease group
+    if (hasDiseases) {
+      if (collapsed.disease) {
+        tr.appendChild(emptyCell());
+      } else {
+        data.sicknesses.forEach(sick => {
+          const state = dupe.diseaseExposure?.[sick.id] || 'None';
+          const td = document.createElement('td');
+          let ds = state;
+          if (dupe.sicknesses?.includes(sick.name)) ds = 'Sick';
+          td.className = 'exposure ' + ds;
+          td.textContent = ds === 'None' ? '-' : ds;
+          td.title = `${sick.name}: ${ds}`;
+          tr.appendChild(td);
+        });
+      }
+    }
+
+    body.appendChild(tr);
+  });
+}
+
+function emptyCell() {
+  const td = document.createElement('td');
+  td.className = 'collapsed-cell';
+  return td;
+}
+
+// Selection & bulk operations
+function toggleSelect(name, e) {
+  if (e && e.shiftKey && lastSelected && data) {
+    // Range select
+    const names = data.dupes.map(d => d.name);
+    const a = names.indexOf(lastSelected), b = names.indexOf(name);
+    const [lo, hi] = a < b ? [a, b] : [b, a];
+    for (let i = lo; i <= hi; i++) selected.add(names[i]);
+  } else if (selected.has(name)) {
+    selected.delete(name);
+  } else {
+    selected.add(name);
+  }
+  lastSelected = name;
+  updateBulkBar();
+  render();
+}
+let lastSelected = null;
+
+function selectAll() {
+  if (!data) return;
+  if (selected.size === data.dupes.length) selected.clear();
+  else data.dupes.forEach(d => selected.add(d.name));
+  updateBulkBar();
+  render();
+}
+
+function clearSelection() { selected.clear(); updateBulkBar(); render(); }
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  bar.className = 'bulk-bar' + (selected.size > 0 ? ' visible' : '');
+  document.getElementById('bulkCount').textContent = selected.size;
+
+  // Populate chore group dropdowns
+  if (data) {
+    ['bulkOnlySelect', 'bulkChoreSelect'].forEach(id => {
+      const sel = document.getElementById(id);
+      const old = sel.value;
+      sel.innerHTML = '<option value="">pick errand...</option>';
+      data.choreGroups.forEach(cg => {
+        sel.innerHTML += `<option value="${cg.id}">${esc(cg.name)}</option>`;
+      });
+      sel.value = old || '';
+    });
+  }
+}
+
+function bulkSetPriorities(fn) {
+  if (!data) return;
+  selected.forEach(name => {
+    const dupe = data.dupes.find(d => d.name === name);
+    if (!dupe) return;
+    if (!changes[name]) changes[name] = {};
+    data.choreGroups.forEach(cg => {
+      const orig = dupe.priorities[cg.id] ?? 0;
+      const newP = fn(cg.id, orig);
+      if (newP !== orig) changes[name][cg.id] = newP;
+      else {
+        delete changes[name][cg.id];
+        if (!Object.keys(changes[name]).length) delete changes[name];
+      }
+    });
+  });
+  updateBadge();
+  render();
+}
+
+function bulkZeroAll() { bulkSetPriorities(() => 0); }
+function bulkSetAll(n) { bulkSetPriorities(() => n); }
+
+function bulkOnly(cgId) {
+  if (!cgId) return;
+  bulkSetPriorities((id) => id === cgId ? 9 : 0);
+}
+
+function bulkSetOne() {
+  const cgId = document.getElementById('bulkChoreSelect').value;
+  const val = parseInt(document.getElementById('bulkPrioVal').value) || 0;
+  if (!cgId) return;
+  bulkSetPriorities((id, orig) => id === cgId ? Math.max(0, Math.min(9, val)) : orig);
+}
+
+function getEffective(name, cgId, orig) { return changes[name]?.[cgId] ?? orig; }
+
+function doSort(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  render();
+}
+
+function updateBadge() {
+  let n = 0;
+  for (const d of Object.values(changes)) n += Object.keys(d).length;
+  document.getElementById('badge').textContent = n;
+  document.getElementById('badge').style.display = n > 0 ? 'inline' : 'none';
+  document.getElementById('commitBtn').disabled = n === 0;
+}
+
+async function commitChanges() {
+  const batch = [];
+  for (const [name, cgs] of Object.entries(changes))
+    for (const [cgId, prio] of Object.entries(cgs))
+      batch.push({ dupe: name, choreGroup: cgId, priority: prio });
+  try {
+    await fetch('/api/priorities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(batch)
+    });
+    document.getElementById('status').textContent = `Committed ${batch.length} changes`;
+    changes = {};
+    updateBadge();
+    setTimeout(refresh, 500);
+  } catch (e) {
+    document.getElementById('status').textContent = 'Commit failed: ' + e.message;
+  }
+}
+
+function resetChanges() { changes = {}; updateBadge(); render(); }
+
+// --- Suggestion engine ---
+// Maps chore group IDs to the core attribute that drives them
+const CHORE_ATTR_MAP = {
+  Dig: 'Digging', Build: 'Construction', Farm: 'Botanist', Ranch: 'Ranching',
+  Cook: 'Cooking', Art: 'Art', Research: 'Learning', Operate: 'Machinery',
+  MedicalAid: 'Caring', Combat: 'Athletics', Supply: 'Athletics',
+  Haul: 'Strength', Tidy: 'Strength', Toggle: 'Athletics',
+  LifeSupport: 'Athletics', Storage: 'Strength',
+};
+
+// Key roles that every schedule should have coverage for
+const KEY_ROLES = ['Dig', 'Build', 'Cook', 'Research', 'Farm', 'Ranch', 'Operate'];
+
+function suggestRole(dupe) {
+  if (!data) return { role: null, scores: {} };
+  // Score each chore group by attribute + interest bonus
+  const scores = {};
+  data.choreGroups.forEach(cg => {
+    const attrKey = CHORE_ATTR_MAP[cg.id];
+    const attrVal = attrKey ? (dupe.coreAttributes?.[attrKey] ?? 0) : 0;
+    // Interest bonus: check if any interest name loosely matches
+    const hasInterest = (dupe.interests || []).some(i =>
+      i.toLowerCase().includes(cg.name.toLowerCase()) ||
+      cg.name.toLowerCase().includes(i.toLowerCase())
+    );
+    scores[cg.id] = attrVal + (hasInterest ? 5 : 0);
+  });
+  // Best role
+  let best = null, bestScore = -1;
+  for (const [id, score] of Object.entries(scores)) {
+    if (score > bestScore) { bestScore = score; best = id; }
+  }
+  return { role: best, bestScore, scores };
+}
+
+function generateSuggestions() {
+  if (!data) return { byDupe: {}, coverage: {} };
+  const byDupe = {};
+  const scheduleMap = {}; // schedule -> [{dupe, role}]
+
+  data.dupes.forEach(dupe => {
+    const { role, bestScore, scores } = suggestRole(dupe);
+    const sched = dupe.schedule || 'Default';
+    if (!scheduleMap[sched]) scheduleMap[sched] = [];
+
+    // Generate priority changes: primary role=9, related roles=5, others=3, disable=0
+    const suggested = {};
+    data.choreGroups.forEach(cg => {
+      if (cg.id === role) suggested[cg.id] = 9;
+      else if ((scores[cg.id] || 0) >= bestScore * 0.6 && bestScore > 0) suggested[cg.id] = 5;
+      else if (!cg.userPrioritizable) suggested[cg.id] = dupe.priorities[cg.id] ?? 5;
+      else suggested[cg.id] = 3;
+    });
+
+    const cgName = data.choreGroups.find(c => c.id === role)?.name || role;
+    byDupe[dupe.name] = { role, roleName: cgName, suggested, scores, schedule: sched };
+    scheduleMap[sched].push({ name: dupe.name, role });
+  });
+
+  // Check coverage per schedule
+  const coverage = {};
+  for (const [sched, dupes] of Object.entries(scheduleMap)) {
+    const missing = [];
+    KEY_ROLES.forEach(roleId => {
+      const has = dupes.some(d => d.role === roleId);
+      if (!has) {
+        const name = data.choreGroups.find(c => c.id === roleId)?.name || roleId;
+        missing.push(name);
+      }
+    });
+    coverage[sched] = { count: dupes.length, missing };
+  }
+
+  return { byDupe, coverage };
+}
+
+function renderSuggestions() {
+  const container = document.getElementById('suggestContent');
+  if (!data) { container.innerHTML = '<div class="no-data">No data loaded.</div>'; return; }
+
+  const { byDupe, coverage } = generateSuggestions();
+  let html = '';
+
+  // Group by schedule
+  const schedGroups = {};
+  data.dupes.forEach(d => {
+    const sched = d.schedule || 'Default';
+    if (!schedGroups[sched]) schedGroups[sched] = [];
+    schedGroups[sched].push(d);
+  });
+
+  for (const [sched, dupes] of Object.entries(schedGroups)) {
+    html += `<div class="suggest-schedule"><h3>${esc(sched)} (${dupes.length} dupes)</h3>`;
+
+    // Coverage warnings
+    const cov = coverage[sched];
+    if (cov && cov.missing.length > 0) {
+      html += `<div class="coverage-warn">Missing coverage: ${cov.missing.join(', ')}</div>`;
+    } else {
+      html += `<div class="coverage-ok">All key roles covered</div>`;
+    }
+
+    html += '<div class="suggest-grid">';
+    dupes.forEach(dupe => {
+      const sg = byDupe[dupe.name];
+      if (!sg) return;
+
+      // Show what would change
+      let changeHtml = '';
+      data.choreGroups.forEach(cg => {
+        const orig = dupe.priorities[cg.id] ?? 0;
+        const newP = sg.suggested[cg.id] ?? orig;
+        if (newP !== orig) {
+          const cls = newP > orig ? 'up' : 'down';
+          const arrow = newP > orig ? '\u2191' : '\u2193';
+          changeHtml += `<span class="${cls}">${cg.name}: ${orig}\u2192${newP} ${arrow}</span> `;
+        }
+      });
+
+      html += `<div class="suggest-card">`;
+      html += `<div class="dupe-name">${esc(dupe.name)}${dupe.isBionic ? ' <span class="bionic-tag">[B]</span>' : ''}</div>`;
+      html += `<div class="role">Suggested: ${esc(sg.roleName)} (score: ${sg.scores[sg.role] || 0})</div>`;
+
+      const topAttrs = Object.entries(dupe.coreAttributes || {})
+        .filter(([,v]) => v > 0).sort((a,b) => b[1] - a[1]).slice(0, 3)
+        .map(([k,v]) => `${k}:${v}`).join(', ');
+      html += `<div class="reason">Top: ${topAttrs || 'none'} | Interests: ${(dupe.interests||[]).join(', ') || 'none'}</div>`;
+
+      if (changeHtml) html += `<div class="change-list">${changeHtml}</div>`;
+      else html += `<div class="change-list" style="color:#555">No changes needed</div>`;
+      html += `</div>`;
+    });
+    html += '</div></div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function applySuggestions() {
+  if (!data) return;
+  const { byDupe } = generateSuggestions();
+  for (const [name, sg] of Object.entries(byDupe)) {
+    const dupe = data.dupes.find(d => d.name === name);
+    if (!dupe) continue;
+    data.choreGroups.forEach(cg => {
+      const orig = dupe.priorities[cg.id] ?? 0;
+      const newP = sg.suggested[cg.id] ?? orig;
+      if (newP !== orig) {
+        if (!changes[name]) changes[name] = {};
+        changes[name][cg.id] = newP;
+      }
+    });
+  }
+  updateBadge();
+  showView('grid');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
