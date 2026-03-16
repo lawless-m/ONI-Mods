@@ -54,12 +54,12 @@ th.collapsed-placeholder {
 }
 
 th.rotated {
-  height: 120px; white-space: nowrap; vertical-align: bottom; padding-bottom: 8px;
-  min-width: 34px;
+  height: 90px; min-width: 28px; padding: 4px 2px;
+  vertical-align: bottom;
 }
 th.rotated span {
-  display: block; transform: rotate(-55deg); transform-origin: center center;
-  width: 28px; font-size: 11px; line-height: 1.1;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 11px; line-height: 1.1;
 }
 th.sort { cursor: pointer; }
 th.sort:hover { color: #e94560; }
@@ -250,8 +250,8 @@ const PRIO_BG = [
 const VITALS = [
   { key: 'stress', label: 'Stress', fmt: v => v + '%',
     cls: v => v > 60 ? 'v-bad' : v > 30 ? 'v-warn' : 'v-good', color: '#e57373' },
-  { key: 'calories', label: 'Calories', fmt: v => (v/1000).toFixed(1) + 'k',
-    cls: v => v < 1000 ? 'v-bad' : v < 2000 ? 'v-warn' : 'v-good', color: '#ffb74d' },
+  { key: 'calories', label: 'Calories', fmt: v => (v/1000).toFixed(0) + ' kcal',
+    cls: v => v < 1000000 ? 'v-bad' : v < 2000000 ? 'v-warn' : 'v-good', color: '#ffb74d' },
   { key: 'morale', label: 'Morale',
     fmt: (v, d) => v + '/' + (d.vitals?.moraleExpectation ?? 0),
     cls: (v, d) => v < (d.vitals?.moraleExpectation ?? 0) ? 'v-bad' :
@@ -272,7 +272,9 @@ const VITALS = [
   { key: 'decor', label: 'Decor', cls: () => 'v-neutral', color: '#b39ddb' },
   { key: 'rads', label: 'Rads',
     cls: v => v > 200 ? 'v-bad' : v > 50 ? 'v-warn' : 'v-good', color: '#66bb6a' },
-  { key: 'distanceTravelled', label: 'Distance', cls: () => 'v-neutral', color: '#78909c' },
+  { key: 'distanceTravelled', label: 'Distance',
+    fmt: v => v > 1000000 ? (v/1000000).toFixed(1) + 'M' : v > 1000 ? (v/1000).toFixed(0) + 'k' : v,
+    cls: () => 'v-neutral', color: '#78909c' },
 ];
 
 const CORE_ATTRS = [
@@ -969,8 +971,13 @@ function applySuggestions() {
 
 function esc(s) {
   const d = document.createElement('div');
-  d.textContent = s || '';
+  d.textContent = strip(s);
   return d.innerHTML;
+}
+
+function strip(s) {
+  if (!s || s.indexOf('<') < 0) return s || '';
+  return s.replace(/<[^>]+>/g, '');
 }
 
 refresh();

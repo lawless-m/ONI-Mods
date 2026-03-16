@@ -648,10 +648,19 @@ namespace DupeTherapist
         public static string EscStatic(string s)
         {
             if (s == null) return "";
-            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
+            return StripTags(s).Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
         }
 
         private static string Esc(string s) => EscStatic(s);
+
+        private static readonly System.Text.RegularExpressions.Regex TagRegex =
+            new System.Text.RegularExpressions.Regex(@"<[^>]+>", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        private static string StripTags(string s)
+        {
+            if (s == null || s.IndexOf('<') < 0) return s;
+            return TagRegex.Replace(s, "");
+        }
     }
 
     public class VitalHistory
