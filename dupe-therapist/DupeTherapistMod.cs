@@ -22,6 +22,7 @@ namespace DupeTherapist
             var go = new GameObject("DupeTherapist");
             go.transform.SetParent(__instance.transform);
             go.AddComponent<TherapistBehaviour>();
+            // PortraitRenderer disabled — KBatchedAnimController crashes on bare GameObjects
         }
     }
 

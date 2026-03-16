@@ -32,6 +32,10 @@
       <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>False</Private>

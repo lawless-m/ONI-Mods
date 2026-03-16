@@ -70,6 +70,14 @@ td.name {
   cursor: pointer;
 }
 td.name:hover { color: #e94560; }
+td.name img.portrait {
+  width: 28px; height: 28px; vertical-align: middle; margin-right: 6px;
+  border-radius: 4px; background: #2a2a4a;
+}
+td.name .rename-btn {
+  font-size: 10px; color: #555; cursor: pointer; margin-left: 6px; visibility: hidden;
+}
+td.name:hover .rename-btn { visibility: visible; color: #e94560; }
 td.info {
   text-align: left; font-size: 11px; color: #aaa;
   max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -560,11 +568,30 @@ function render() {
     chkTd.onclick = (e) => { e.stopPropagation(); toggleSelect(dupe.name, e); };
     tr.appendChild(chkTd);
 
-    // Name
+    // Name with portrait and rename
     const nameTd = document.createElement('td');
     nameTd.className = 'name';
-    nameTd.innerHTML = esc(dupe.name) + (dupe.isBionic ? '<span class="bionic-tag">[B]</span>' : '');
-    nameTd.onclick = () => { document.getElementById('chartDupe').value = dupe.name; showView('chart'); };
+    const img = document.createElement('img');
+    img.className = 'portrait';
+    img.src = '/api/portrait?name=' + encodeURIComponent(dupe.name);
+    img.onerror = function() { this.style.display = 'none'; };
+    nameTd.appendChild(img);
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = dupe.name;
+    nameSpan.onclick = () => { document.getElementById('chartDupe').value = dupe.name; showView('chart'); };
+    nameTd.appendChild(nameSpan);
+    if (dupe.isBionic) {
+      const bt = document.createElement('span');
+      bt.className = 'bionic-tag';
+      bt.textContent = '[B]';
+      nameTd.appendChild(bt);
+    }
+    const renBtn = document.createElement('span');
+    renBtn.className = 'rename-btn';
+    renBtn.textContent = '\u270E';
+    renBtn.title = 'Rename';
+    renBtn.onclick = (e) => { e.stopPropagation(); renameDupe(dupe.name); };
+    nameTd.appendChild(renBtn);
     tr.appendChild(nameTd);
 
     // Identity group
@@ -811,6 +838,30 @@ async function commitChanges() {
 }
 
 function resetChanges() { changes = {}; updateBadge(); render(); }
+
+async function renameDupe(oldName) {
+  const newName = prompt('Rename ' + oldName + ' to:', oldName);
+  if (!newName || newName === oldName) return;
+  try {
+    await fetch('/api/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oldName, newName })
+    });
+    // Update local changes keys too
+    if (changes[oldName]) {
+      changes[newName] = changes[oldName];
+      delete changes[oldName];
+    }
+    if (selected.has(oldName)) {
+      selected.delete(oldName);
+      selected.add(newName);
+    }
+    setTimeout(refresh, 500);
+  } catch (e) {
+    alert('Rename failed: ' + e.message);
+  }
+}
 
 // --- Suggestion engine ---
 // Maps chore group IDs to the core attribute that drives them

@@ -52,6 +52,8 @@ namespace DupeTherapist
                 historyTimer = HistoryInterval;
                 float cycle = GameClock.Instance != null ? GameClock.Instance.GetCycle() + GameClock.Instance.GetCurrentCycleAsPercentage() : 0;
                 server.History.RecordSnapshot(cycle);
+
+                // Portrait rendering disabled for now
             }
         }
 
@@ -141,6 +143,10 @@ namespace DupeTherapist
                     HandlePriorityPost(ctx);
                 else if (path == "/api/history" && ctx.Request.HttpMethod == "GET")
                     Respond(ctx.Response, 200, History.ToJson(), "application/json");
+                else if (path.StartsWith("/api/portrait") && ctx.Request.HttpMethod == "GET")
+                    HandlePortrait(ctx);
+                else if (path == "/api/rename" && ctx.Request.HttpMethod == "POST")
+                    HandleRename(ctx);
                 else
                     Respond(ctx.Response, 404, "Not found");
             }
@@ -173,10 +179,59 @@ namespace DupeTherapist
                 $"{{\"queued\":{changes.Count}}}", "application/json");
         }
 
+        private readonly ConcurrentQueue<RenameRequest> pendingRenames = new ConcurrentQueue<RenameRequest>();
+
+        private void HandlePortrait(HttpListenerContext ctx)
+        {
+            var query = ctx.Request.QueryString;
+            var name = query["name"];
+            if (string.IsNullOrEmpty(name))
+            {
+                Respond(ctx.Response, 400, "Missing name parameter");
+                return;
+            }
+
+            var renderer = PortraitRenderer.Instance;
+            var png = renderer?.GetPortrait(name);
+            if (png != null)
+            {
+                ctx.Response.StatusCode = 200;
+                ctx.Response.ContentType = "image/png";
+                ctx.Response.ContentLength64 = png.Length;
+                ctx.Response.OutputStream.Write(png, 0, png.Length);
+                ctx.Response.Close();
+            }
+            else
+            {
+                Respond(ctx.Response, 404, "Portrait not ready");
+            }
+        }
+
+        private void HandleRename(HttpListenerContext ctx)
+        {
+            string body;
+            using (var reader = new StreamReader(ctx.Request.InputStream))
+                body = reader.ReadToEnd();
+
+            var oldName = PriorityChange.ExtractString(body, "oldName");
+            var newName = PriorityChange.ExtractString(body, "newName");
+            if (oldName == null || newName == null)
+            {
+                Respond(ctx.Response, 400, "{\"error\":\"missing oldName or newName\"}", "application/json");
+                return;
+            }
+
+            pendingRenames.Enqueue(new RenameRequest { OldName = oldName, NewName = newName });
+            Respond(ctx.Response, 200, "{\"ok\":true}", "application/json");
+        }
+
         public void ApplyPendingChanges()
         {
             while (pendingChanges.TryDequeue(out var change))
                 change.Apply();
+
+            while (pendingRenames.TryDequeue(out var rename))
+                rename.Apply();
         }
 
         private static void Respond(HttpListenerResponse response, int status,
@@ -255,7 +310,7 @@ namespace DupeTherapist
             }
         }
 
-        private static string ExtractString(string json, string key)
+        public static string ExtractString(string json, string key)
         {
             var marker = $"\"{key}\":\"";
             int idx = json.IndexOf(marker, StringComparison.Ordinal);
@@ -276,6 +331,26 @@ namespace DupeTherapist
                 sb.Append(json[idx++]);
             int.TryParse(sb.ToString(), out int val);
             return val;
+        }
+    }
+
+    public class RenameRequest
+    {
+        public string OldName;
+        public string NewName;
+
+        public void Apply()
+        {
+            var dupes = Components.LiveMinionIdentities.Items;
+            var identity = dupes?.FirstOrDefault(d => d.GetProperName() == OldName);
+            if (identity == null) return;
+
+            identity.SetName(NewName);
+            Debug.Log($"DupeTherapist: Renamed '{OldName}' to '{NewName}'");
+
+            // Invalidate portrait cache
+            if (PortraitRenderer.Instance != null)
+                PortraitRenderer.Instance.InvalidateCache();
         }
     }
 
