@@ -491,6 +491,27 @@ namespace DupeTherapist
             }
             sb.Append(']');
 
+            // Disabled chore groups (from traits like Unconstructive, Yokel, etc.)
+            sb.Append(",\"disabledGroups\":[");
+            if (traits != null)
+            {
+                bool first = true;
+                foreach (var cg in choreGroups)
+                {
+                    try
+                    {
+                        if (traits.IsChoreGroupDisabled(cg))
+                        {
+                            if (!first) sb.Append(',');
+                            sb.Append('"').Append(Esc(cg.Id)).Append('"');
+                            first = false;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            sb.Append(']');
+
             // Core attributes (Strength, Athletics, etc.)
             sb.Append(",\"coreAttributes\":{");
             try
