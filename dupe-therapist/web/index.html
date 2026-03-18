@@ -80,7 +80,7 @@ td.name .rename-btn {
 td.name:hover .rename-btn { visibility: visible; color: #e94560; }
 td.info {
   text-align: left; font-size: 11px; color: #aaa;
-  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  white-space: normal;
 }
 .interest { color: #4fc3f7; }
 .trait { color: #ce93d8; }
@@ -291,17 +291,17 @@ const VITALS = [
 ];
 
 const CORE_ATTRS = [
-  { key: 'Strength', label: 'Str', color: '#e57373' },
-  { key: 'Athletics', label: 'Ath', color: '#ffb74d' },
-  { key: 'Learning', label: 'Lrn', color: '#4fc3f7' },
-  { key: 'Cooking', label: 'Cook', color: '#ff8a65' },
-  { key: 'Caring', label: 'Care', color: '#f48fb1' },
+  { key: 'Strength', label: 'Strength', color: '#e57373' },
+  { key: 'Athletics', label: 'Athletics', color: '#ffb74d' },
+  { key: 'Learning', label: 'Learning', color: '#4fc3f7' },
+  { key: 'Cooking', label: 'Cooking', color: '#ff8a65' },
+  { key: 'Caring', label: 'Caring', color: '#f48fb1' },
   { key: 'Art', label: 'Art', color: '#ce93d8' },
-  { key: 'Digging', label: 'Dig', color: '#a1887f' },
-  { key: 'Construction', label: 'Build', color: '#90a4ae' },
-  { key: 'Machinery', label: 'Mech', color: '#80cbc4' },
-  { key: 'Ranching', label: 'Ranch', color: '#81c784' },
-  { key: 'Botanist', label: 'Farm', color: '#aed581' },
+  { key: 'Digging', label: 'Digging', color: '#a1887f' },
+  { key: 'Construction', label: 'Construction', color: '#90a4ae' },
+  { key: 'Machinery', label: 'Machinery', color: '#80cbc4' },
+  { key: 'Ranching', label: 'Ranching', color: '#81c784' },
+  { key: 'Botanist', label: 'Farming', color: '#aed581' },
 ];
 
 const BIONIC_VITALS = [
@@ -902,7 +902,7 @@ const KEY_ROLES = ['Dig', 'Build', 'Cook', 'Research', 'Farm', 'Ranch', 'Machine
 
 // Chore groups that shouldn't be assigned as a primary role
 // (reactive/incidental work, not full-time jobs)
-const NON_PRIMARY = new Set(['Combat', 'Toggle', 'LifeSupport', 'Recreation', 'Basekeeping']);
+const NON_PRIMARY = new Set(['Combat', 'Toggle', 'LifeSupport', 'Recreation', 'Basekeeping', 'Rocketry', 'Hauling', 'Storage']);
 
 function suggestRole(dupe) {
   if (!data) return { role: null, scores: {} };
