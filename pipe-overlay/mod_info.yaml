@@ -1,0 +1,5 @@
+supportedContent: ALL
+minimumSupportedBuild: 0
+APIVersion: 2
+version: 1.0.0
+description: Colors each separate pipe, conveyor rail, and power network differently in their overlays

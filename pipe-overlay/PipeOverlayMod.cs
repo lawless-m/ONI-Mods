@@ -1,14 +1,44 @@
 using HarmonyLib;
 using UnityEngine;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using PeterHan.PLib.Core;
+using PeterHan.PLib.Options;
 
 namespace PipeOverlay
 {
+    [JsonObject(MemberSerialization.OptIn)]
+    [RestartRequired]
+    public class PipeOverlayOptions
+    {
+        [Option("Liquid Pipes", "Color liquid pipe networks")]
+        [JsonProperty]
+        public bool LiquidPipes { get; set; } = true;
+
+        [Option("Gas Pipes", "Color gas pipe networks")]
+        [JsonProperty]
+        public bool GasPipes { get; set; } = true;
+
+        [Option("Conveyor Rails", "Color conveyor rail networks")]
+        [JsonProperty]
+        public bool ConveyorRails { get; set; } = true;
+
+        [Option("Electrical Wires", "Color electrical wire networks")]
+        [JsonProperty]
+        public bool ElectricalWires { get; set; } = true;
+
+        private static PipeOverlayOptions _instance;
+        public static PipeOverlayOptions Instance =>
+            _instance ?? (_instance = POptions.ReadSettings<PipeOverlayOptions>() ?? new PipeOverlayOptions());
+    }
+
     public class PipeOverlayMod : KMod.UserMod2
     {
         public override void OnLoad(Harmony harmony)
         {
             Debug.Log("PipeOverlay: Loading...");
+            PUtil.InitLibrary();
+            new POptions().RegisterOptions(this, typeof(PipeOverlayOptions));
             base.OnLoad(harmony);
             Debug.Log("PipeOverlay: Loaded successfully!");
         }
@@ -46,11 +76,10 @@ namespace PipeOverlay
         {
             if (prefabId.Contains("Radiant"))
             {
-                float pulse = 1.1f + 0.25f * Mathf.Sin(Time.time * 3f);
                 return new Color32(
-                    (byte)Mathf.Min(255, color.r * pulse),
-                    (byte)Mathf.Min(255, color.g * pulse),
-                    (byte)Mathf.Min(255, color.b * pulse),
+                    (byte)Mathf.Min(255, color.r * 1.35f),
+                    (byte)Mathf.Min(255, color.g * 1.35f),
+                    (byte)Mathf.Min(255, color.b * 1.35f),
                     color.a);
             }
             if (prefabId.Contains("Insulated"))
@@ -72,6 +101,11 @@ namespace PipeOverlay
             HashSet<SaveLoadRoot> ___layerTargets)
         {
             bool isLiquid = __instance is OverlayModes.LiquidConduits;
+            if (isLiquid && !PipeOverlayOptions.Instance.LiquidPipes)
+                return;
+            if (!isLiquid && !PipeOverlayOptions.Instance.GasPipes)
+                return;
+
             var networkMgr = isLiquid
                 ? (IUtilityNetworkMgr)Game.Instance.liquidConduitSystem
                 : (IUtilityNetworkMgr)Game.Instance.gasConduitSystem;
@@ -112,17 +146,30 @@ namespace PipeOverlay
             if (!___showContents)
                 return;
 
-            IUtilityNetworkMgr networkMgr;
-            if (___flowManager == Game.Instance.liquidConduitFlow)
-                networkMgr = (IUtilityNetworkMgr)Game.Instance.liquidConduitSystem;
-            else
-                networkMgr = (IUtilityNetworkMgr)Game.Instance.gasConduitSystem;
+            bool isLiquid = ___flowManager == Game.Instance.liquidConduitFlow;
+            if (isLiquid && !PipeOverlayOptions.Instance.LiquidPipes)
+                return;
+            if (!isLiquid && !PipeOverlayOptions.Instance.GasPipes)
+                return;
+
+            IUtilityNetworkMgr networkMgr = isLiquid
+                ? (IUtilityNetworkMgr)Game.Instance.liquidConduitSystem
+                : (IUtilityNetworkMgr)Game.Instance.gasConduitSystem;
 
             UtilityNetwork network = networkMgr.GetNetworkForCell(cell);
             if (network == null)
                 return;
 
             __result = NetworkColors.Tint(__result, network.id);
+
+            int layer = isLiquid ? (int)ObjectLayer.LiquidConduit : (int)ObjectLayer.GasConduit;
+            GameObject conduitGo = Grid.Objects[cell, layer];
+            if (conduitGo != null)
+            {
+                var building = conduitGo.GetComponent<Building>();
+                if (building != null)
+                    __result = NetworkColors.ApplyPipeType(__result, building.Def.PrefabID);
+            }
         }
     }
 
@@ -131,6 +178,9 @@ namespace PipeOverlay
     {
         public static void Postfix(HashSet<SaveLoadRoot> ___layerTargets)
         {
+            if (!PipeOverlayOptions.Instance.ConveyorRails)
+                return;
+
             var networkMgr = (IUtilityNetworkMgr)Game.Instance.solidConduitSystem;
 
             foreach (SaveLoadRoot target in ___layerTargets)
@@ -170,6 +220,9 @@ namespace PipeOverlay
     {
         public static void Postfix(HashSet<SaveLoadRoot> ___layerTargets)
         {
+            if (!PipeOverlayOptions.Instance.ElectricalWires)
+                return;
+
             var networkMgr = (IUtilityNetworkMgr)Game.Instance.electricalConduitSystem;
 
             foreach (SaveLoadRoot target in ___layerTargets)

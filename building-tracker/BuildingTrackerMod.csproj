@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>PipeOverlay</AssemblyName>
-    <RootNamespace>PipeOverlay</RootNamespace>
+    <AssemblyName>BuildingTrackerMod</AssemblyName>
+    <RootNamespace>BuildingTrackerMod</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -12,10 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/0Harmony.dll</HintPath>
       <Private>False</Private>
@@ -36,13 +32,5 @@
       <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>$(ONI_INSTALL_DIR)/OxygenNotIncluded_Data/Managed/UnityEngine.UI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="PLib" Version="4.19.0" />
   </ItemGroup>
 </Project>

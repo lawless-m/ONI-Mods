@@ -170,6 +170,60 @@ td.sel-check input { cursor: pointer; }
 .suggest-card .change-list .down { color: #e57373; }
 .coverage-warn { background: #2a1a0a; border-color: #e94560; padding: 8px 14px; border-radius: 6px; margin-bottom: 12px; color: #ffb74d; font-size: 13px; }
 .coverage-ok { color: #555; font-size: 12px; margin-bottom: 12px; }
+
+/* Geyser view */
+.geyser-view { display: none; padding: 20px; max-height: calc(100vh - 50px); overflow: auto; }
+.geyser-view.visible { display: block; }
+.geyser-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
+.geyser-world { margin-bottom: 20px; }
+.geyser-world h3 { color: #e94560; font-size: 16px; margin-bottom: 10px; }
+.geyser-card {
+  background: #16213e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 14px;
+}
+.geyser-card.unanalyzed { opacity: 0.6; }
+.geyser-card .geyser-header {
+  display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;
+}
+.geyser-card .geyser-name { font-weight: bold; font-size: 14px; }
+.geyser-card .geyser-status { font-size: 11px; border-radius: 3px; padding: 1px 6px; }
+.geyser-card .geyser-status.studied { background: #1b5e20; color: #a5d6a7; }
+.geyser-card .geyser-status.uncovered { background: #4a3800; color: #ffd54f; }
+.geyser-card .geyser-status.buried { background: #333; color: #888; }
+.geyser-card .geyser-element { color: #4fc3f7; font-size: 13px; margin-bottom: 6px; }
+.geyser-card .geyser-pos { color: #666; font-size: 11px; }
+.geyser-detail { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 12px; margin-top: 8px; }
+.geyser-detail .label { color: #888; }
+.geyser-detail .value { color: #e0e0e0; font-family: monospace; }
+.geyser-detail .value.highlight { color: #ffb74d; font-weight: bold; }
+.geyser-detail .value.pool { color: #4fc3f7; font-weight: bold; }
+.geyser-section { color: #ce93d8; font-size: 11px; font-weight: bold; grid-column: 1 / -1; margin-top: 6px; border-top: 1px solid #2a2a4a; padding-top: 4px; }
+
+/* Resource view */
+.resource-view { display: none; padding: 20px; max-height: calc(100vh - 50px); overflow: auto; }
+.resource-view.visible { display: block; }
+.resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 16px; }
+.asteroid-card { background: #16213e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 16px; }
+.asteroid-card h3 { color: #e94560; font-size: 16px; margin-bottom: 12px; }
+.asteroid-card .start-tag { color: #4fc3f7; font-size: 12px; margin-left: 8px; }
+.cat-section { margin-bottom: 4px; }
+.cat-header {
+  cursor: pointer; padding: 4px 8px; background: #0f3460; border-radius: 4px;
+  font-size: 13px; color: #aaa; display: flex; justify-content: space-between;
+  user-select: none; margin-bottom: 2px;
+}
+.cat-header:hover { background: #533483; color: #e0e0e0; }
+.cat-header .cat-total { color: #666; font-size: 12px; }
+.resource-list { padding: 2px 0 2px 12px; }
+.resource-row {
+  display: flex; justify-content: space-between; padding: 1px 8px;
+  font-size: 13px;
+}
+.resource-row:hover { background: rgba(233,69,96,0.08); }
+.resource-amount { color: #4fc3f7; font-family: monospace; white-space: nowrap; }
+.resource-forecast { font-size: 11px; margin-left: 8px; padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+.resource-forecast.fc-crit { color: #ff5252; background: rgba(255,82,82,0.15); }
+.resource-forecast.fc-warn { color: #ffb74d; background: rgba(255,183,77,0.15); }
+.resource-forecast.fc-ok { color: #666; }
 </style>
 </head>
 <body>
@@ -179,6 +233,8 @@ td.sel-check input { cursor: pointer; }
   <button id="gridBtn" class="active" onclick="showView('grid')">Grid</button>
   <button id="chartBtn" onclick="showView('chart')">Charts</button>
   <button id="suggestBtn" onclick="showView('suggest')">Suggest</button>
+  <button id="resourceBtn" onclick="showView('resources')">Resources</button>
+  <button id="geyserBtn" onclick="showView('geysers')">Geysers</button>
   <div class="sep"></div>
   <button onclick="refresh()">Refresh</button>
   <button class="commit-btn" id="commitBtn" onclick="commitChanges()" disabled>
@@ -232,6 +288,27 @@ td.sel-check input { cursor: pointer; }
     <button onclick="applySuggestions()">Apply All Suggestions</button>
   </div>
   <div id="suggestContent"></div>
+</div>
+
+<div class="geyser-view" id="geyserView">
+  <div id="geyserContent"></div>
+</div>
+
+<div class="resource-view" id="resourceView">
+  <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
+    <button id="resCurrentBtn" class="active" onclick="showResSubView('current')">Current</button>
+    <button id="resHistoryBtn" onclick="showResSubView('history')">History</button>
+    <span id="resCurControls" style="display:contents;">
+      <button onclick="toggleAllCats(false)">Collapse All</button>
+      <button onclick="toggleAllCats(true)">Expand All</button>
+    </span>
+    <span id="resHistControls" style="display:none;">
+      <select id="resHistCategory" onchange="renderResHistory()"><option value="">-- All categories --</option></select>
+      <select id="resHistResource" onchange="renderResHistory()"><option value="">-- All resources --</option></select>
+    </span>
+  </div>
+  <div id="resourceContent"></div>
+  <div id="resourceHistContent" style="display:none;"></div>
 </div>
 
 <script>
@@ -335,11 +412,17 @@ function showView(view) {
   document.getElementById('gridView').style.display = view === 'grid' ? '' : 'none';
   document.getElementById('chartView').className = 'chart-view' + (view === 'chart' ? ' visible' : '');
   document.getElementById('suggestView').className = 'chart-view' + (view === 'suggest' ? ' visible' : '');
+  document.getElementById('resourceView').className = 'resource-view' + (view === 'resources' ? ' visible' : '');
+  document.getElementById('geyserView').className = 'geyser-view' + (view === 'geysers' ? ' visible' : '');
   document.getElementById('gridBtn').className = view === 'grid' ? 'active' : '';
   document.getElementById('chartBtn').className = view === 'chart' ? 'active' : '';
   document.getElementById('suggestBtn').className = view === 'suggest' ? 'active' : '';
+  document.getElementById('resourceBtn').className = view === 'resources' ? 'active' : '';
+  document.getElementById('geyserBtn').className = view === 'geysers' ? 'active' : '';
   if (view === 'chart') loadHistory();
   if (view === 'suggest') renderSuggestions();
+  if (view === 'resources') { if (resSubView === 'history') loadResHistory(); else loadResources(); }
+  if (view === 'geysers') loadGeysers();
 }
 
 let lastJson = '';
@@ -1064,8 +1147,344 @@ function strip(s) {
   return s.replace(/<[^>]+>/g, '');
 }
 
+// --- Resources ---
+let resourceData = null;
+
+let resForecast = {}; // resourceName -> cycles until depletion (null = stable/growing)
+
+async function loadResources() {
+  try {
+    const [rr, rh] = await Promise.all([fetch('/api/resources'), fetch('/api/resource-history')]);
+    resourceData = await rr.json();
+    const hist = await rh.json();
+    resForecast = calcForecasts(hist);
+    renderResources();
+  } catch(e) {
+    try {
+      const r = await fetch('/api/resources');
+      resourceData = await r.json();
+      resForecast = {};
+      renderResources();
+    } catch(e2) {
+      document.getElementById('resourceContent').innerHTML = '<div class="no-data">Failed to load resources.</div>';
+    }
+  }
+}
+
+function calcForecasts(hist) {
+  const fc = {};
+  for (const [name, info] of Object.entries(hist)) {
+    const pts = info.points;
+    if (pts.length < 2) continue;
+    // Find points spanning roughly the last 2 cycles
+    const lastCycle = pts[pts.length - 1][0];
+    const cutoff = lastCycle - 2;
+    let startIdx = pts.length - 1;
+    for (let i = pts.length - 1; i >= 0; i--) {
+      if (pts[i][0] < cutoff) { startIdx = i; break; }
+    }
+    if (startIdx === pts.length - 1) startIdx = 0; // not enough span, use all
+    const dt = pts[pts.length - 1][0] - pts[startIdx][0];
+    if (dt <= 0) continue;
+    const dv = pts[pts.length - 1][1] - pts[startIdx][1];
+    const rate = dv / dt; // per cycle
+    const current = pts[pts.length - 1][1];
+    if (rate < 0 && current > 0) {
+      fc[name] = -current / rate; // cycles until zero
+    }
+  }
+  return fc;
+}
+
+function renderResources() {
+  const c = document.getElementById('resourceContent');
+  if (!resourceData?.worlds?.length) { c.innerHTML = '<div class="no-data">No resource data.</div>'; return; }
+  let h = '<div class="resource-grid">';
+  resourceData.worlds.filter(w => w.categories?.length).forEach(w => {
+    h += `<div class="asteroid-card"><h3>${esc(w.name)}${w.isStartWorld ? '<span class="start-tag">[Start]</span>' : ''}</h3>`;
+    w.categories.forEach(cat => {
+      const total = cat.resources.reduce((s, r) => s + r[1], 0);
+      h += `<div class="cat-section"><div class="cat-header" onclick="toggleCat(this)">`;
+      h += `<span><span class="arrow">\u25BC</span> ${esc(cat.name)} (${cat.resources.length})</span>`;
+      h += `<span class="cat-total">${fmtRes(total, cat.unit)}</span></div>`;
+      h += `<div class="resource-list">`;
+      cat.resources.forEach(([name, amount]) => {
+        const fcHtml = fmtForecast(resForecast[name]);
+        h += `<div class="resource-row"><span>${esc(name)}${fcHtml}</span><span class="resource-amount">${fmtRes(amount, cat.unit)}</span></div>`;
+      });
+      h += `</div></div>`;
+    });
+    h += `</div>`;
+  });
+  h += '</div>';
+  c.innerHTML = h;
+}
+
+function toggleCat(el) {
+  const list = el.nextElementSibling;
+  const hidden = list.style.display === 'none';
+  list.style.display = hidden ? '' : 'none';
+  el.querySelector('.arrow').textContent = hidden ? '\u25BC' : '\u25B6';
+}
+
+function toggleAllCats(expand) {
+  document.querySelectorAll('#resourceContent .cat-header').forEach(el => {
+    el.nextElementSibling.style.display = expand ? '' : 'none';
+    el.querySelector('.arrow').textContent = expand ? '\u25BC' : '\u25B6';
+  });
+}
+
+function fmtRes(v, unit) {
+  if (unit === 'calories') return (v / 1000).toFixed(0) + ' kcal';
+  if (unit === 'units') return Math.round(v).toLocaleString();
+  if (v >= 1000) return (v / 1000).toFixed(1) + ' t';
+  if (v >= 1) return v.toFixed(1) + ' kg';
+  return (v * 1000).toFixed(0) + ' g';
+}
+
+function fmtForecast(cycles) {
+  if (cycles == null || cycles > 100) return '';
+  const cls = cycles < 3 ? 'fc-crit' : cycles < 10 ? 'fc-warn' : 'fc-ok';
+  const label = cycles < 1 ? `~${(cycles * 600).toFixed(0)}s` : `~${cycles.toFixed(1)} cycles`;
+  return `<span class="resource-forecast ${cls}">\u26a0 ${label}</span>`;
+}
+
+// --- Resource History ---
+let resHistData = null;
+let resSubView = 'current';
+
+const RES_COLORS = [
+  '#4fc3f7','#e94560','#81c784','#ffb74d','#ce93d8',
+  '#f48fb1','#80cbc4','#fff176','#90caf9','#a5d6a7',
+  '#ef5350','#42a5f5','#66bb6a','#ffa726','#ab47bc',
+];
+
+function showResSubView(sub) {
+  resSubView = sub;
+  document.getElementById('resCurrentBtn').className = sub === 'current' ? 'active' : '';
+  document.getElementById('resHistoryBtn').className = sub === 'history' ? 'active' : '';
+  document.getElementById('resCurControls').style.display = sub === 'current' ? 'contents' : 'none';
+  document.getElementById('resHistControls').style.display = sub === 'history' ? 'contents' : 'none';
+  document.getElementById('resourceContent').style.display = sub === 'current' ? '' : 'none';
+  document.getElementById('resourceHistContent').style.display = sub === 'history' ? '' : 'none';
+  if (sub === 'history') loadResHistory();
+  if (sub === 'current') loadResources();
+}
+
+async function loadResHistory() {
+  try {
+    const r = await fetch('/api/resource-history');
+    resHistData = await r.json();
+    updateResHistSelectors();
+    renderResHistory();
+  } catch(e) {
+    document.getElementById('resourceHistContent').innerHTML = '<div class="no-data">No resource history yet. Data is recorded every 30 seconds.</div>';
+  }
+}
+
+function updateResHistSelectors() {
+  if (!resHistData) return;
+  // Build category list from current resource data
+  const cats = new Set();
+  const resCats = {}; // resourceName -> unit (as proxy for category grouping)
+  for (const [name, info] of Object.entries(resHistData)) {
+    cats.add(info.unit);
+    resCats[name] = info.unit;
+  }
+  const catSel = document.getElementById('resHistCategory');
+  const oldCat = catSel.value;
+  catSel.innerHTML = '<option value="">-- All --</option>';
+  for (const c of [...cats].sort()) {
+    const label = c === 'mass' ? 'Materials' : c === 'calories' ? 'Food' : 'Units';
+    catSel.innerHTML += `<option value="${c}">${label}</option>`;
+  }
+  catSel.value = oldCat || '';
+  updateResHistResourceSelector();
+}
+
+function updateResHistResourceSelector() {
+  if (!resHistData) return;
+  const catFilter = document.getElementById('resHistCategory').value;
+  const resSel = document.getElementById('resHistResource');
+  const old = resSel.value;
+  resSel.innerHTML = '<option value="">-- All resources --</option>';
+  const names = Object.keys(resHistData).filter(n => !catFilter || resHistData[n].unit === catFilter).sort();
+  for (const n of names) resSel.innerHTML += `<option value="${esc(n)}">${esc(n)}</option>`;
+  resSel.value = old || '';
+}
+
+function renderResHistory() {
+  updateResHistResourceSelector();
+  const grid = document.getElementById('resourceHistContent');
+  if (!resHistData || !Object.keys(resHistData).length) {
+    grid.innerHTML = '<div class="no-data">No resource history yet. Data is recorded every 30 seconds.</div>';
+    return;
+  }
+  const catFilter = document.getElementById('resHistCategory').value;
+  const resFilter = document.getElementById('resHistResource').value;
+
+  grid.innerHTML = '';
+  const container = document.createElement('div');
+  container.className = 'chart-grid';
+
+  if (resFilter) {
+    // Single resource — one big chart
+    const info = resHistData[resFilter];
+    if (!info || info.points.length < 2) { grid.innerHTML = '<div class="no-data">Not enough data for this resource.</div>'; return; }
+    const card = makeChartCard(resFilter + ' (' + fmtResUnit(info.unit) + ')', [{ name: resFilter, points: info.points, color: RES_COLORS[0] }]);
+    card.style.gridColumn = '1 / -1';
+    container.appendChild(card);
+  } else {
+    // Group by unit type, show top resources per group
+    const groups = {};
+    for (const [name, info] of Object.entries(resHistData)) {
+      if (catFilter && info.unit !== catFilter) continue;
+      if (info.points.length < 2) continue;
+      if (!groups[info.unit]) groups[info.unit] = [];
+      const lastVal = info.points[info.points.length - 1][1];
+      groups[info.unit].push({ name, info, lastVal });
+    }
+    for (const unit of Object.keys(groups).sort()) {
+      const items = groups[unit].sort((a, b) => b.lastVal - a.lastVal);
+      // Show top 12 as individual charts
+      const shown = items.slice(0, 12);
+      shown.forEach((item, idx) => {
+        const card = makeChartCard(item.name, [{ name: item.name, points: item.info.points, color: RES_COLORS[idx % RES_COLORS.length] }]);
+        container.appendChild(card);
+      });
+      if (items.length > 12) {
+        const note = document.createElement('div');
+        note.className = 'no-data';
+        note.textContent = `+ ${items.length - 12} more ${fmtResUnit(unit)} resources (use filter to view)`;
+        note.style.gridColumn = '1 / -1';
+        container.appendChild(note);
+      }
+    }
+  }
+
+  if (!container.children.length) {
+    grid.innerHTML = '<div class="no-data">No matching resource history.</div>';
+    return;
+  }
+  grid.appendChild(container);
+}
+
+function fmtResUnit(unit) {
+  return unit === 'mass' ? 'materials' : unit === 'calories' ? 'food' : 'units';
+}
+
+// --- Geysers ---
+let geyserData = null;
+
+async function loadGeysers() {
+  try {
+    const r = await fetch('/api/geysers');
+    geyserData = await r.json();
+    renderGeysers();
+  } catch(e) {
+    document.getElementById('geyserContent').innerHTML = '<div class="no-data">Failed to load geyser data.</div>';
+  }
+}
+
+function renderGeysers() {
+  const c = document.getElementById('geyserContent');
+  if (!geyserData?.geysers?.length) { c.innerHTML = '<div class="no-data">No geysers found.</div>'; return; }
+
+  // Group by world
+  const byWorld = {};
+  geyserData.geysers.forEach(g => {
+    const wn = g.worldName || 'Unknown';
+    if (!byWorld[wn]) byWorld[wn] = [];
+    byWorld[wn].push(g);
+  });
+
+  let h = '';
+  for (const [world, geysers] of Object.entries(byWorld).sort((a,b) => a[0].localeCompare(b[0]))) {
+    h += `<div class="geyser-world"><h3>${esc(world)} (${geysers.length})</h3><div class="geyser-grid">`;
+    geysers.forEach(g => { h += renderGeyserCard(g); });
+    h += '</div></div>';
+  }
+  c.innerHTML = h;
+}
+
+function renderGeyserCard(g) {
+  const status = g.studied ? 'studied' : g.uncovered ? 'uncovered' : 'buried';
+  const statusLabel = g.studied ? 'Analyzed' : g.uncovered ? 'Uncovered' : 'Buried';
+  let h = `<div class="geyser-card${g.studied ? '' : ' unanalyzed'}">`;
+  h += `<div class="geyser-header"><span class="geyser-name">${esc(g.name)}</span>`;
+  h += `<span class="geyser-status ${status}">${statusLabel}</span></div>`;
+  h += `<div class="geyser-element">${esc(g.element)} (${g.elementState}) @ ${g.temperature.toFixed(1)}\u00B0C</div>`;
+  h += `<div class="geyser-pos">(${g.x}, ${g.y})</div>`;
+
+  if (g.studied) {
+    const CYCLE = 600; // seconds per cycle
+    const massPerEruption = g.emitRate * g.onDuration;
+    const eruptionsPerSeason = g.yearOnDuration / g.iterationLength;
+    const massPerSeason = eruptionsPerSeason * massPerEruption;
+
+    h += '<div class="geyser-detail">';
+
+    // Eruption timing
+    h += '<div class="geyser-section">Eruption Cycle</div>';
+    h += `<span class="label">Emit rate</span><span class="value">${fmtMassRate(g.emitRate)}</span>`;
+    h += `<span class="label">Erupting</span><span class="value">${fmtDuration(g.onDuration)} (${(g.iterationPercent*100).toFixed(0)}%)</span>`;
+    h += `<span class="label">Idle</span><span class="value">${fmtDuration(g.offDuration)}</span>`;
+    h += `<span class="label">Per eruption</span><span class="value highlight">${fmtMass(massPerEruption)}</span>`;
+
+    // Season timing
+    h += '<div class="geyser-section">Active Season</div>';
+    h += `<span class="label">Active</span><span class="value">${fmtDuration(g.yearOnDuration)} (${(g.yearPercent*100).toFixed(0)}%)</span>`;
+    h += `<span class="label">Dormant</span><span class="value">${fmtDuration(g.yearOffDuration)}</span>`;
+    h += `<span class="label">Eruptions</span><span class="value">${eruptionsPerSeason.toFixed(1)}</span>`;
+
+    // Storage / output summary
+    h += '<div class="geyser-section">Output</div>';
+    h += `<span class="label">Per active season</span><span class="value highlight">${fmtMass(massPerSeason)}</span>`;
+    h += `<span class="label">Average (long-term)</span><span class="value">${fmtMassRate(g.averageEmission)}</span>`;
+    h += `<span class="label">Avg per cycle</span><span class="value">${fmtMass(g.averageEmission * CYCLE)}</span>`;
+    h += `<span class="label">Overpressure</span><span class="value">${fmtMass(g.maxPressure)}</span>`;
+
+    // Pool sizing (liquid/molten only)
+    if (g.elementState === 'liquid' || g.elementState === 'solid') {
+      h += '<div class="geyser-section">Pool Sizing</div>';
+      const kgPerCell = 1000;
+      const cellsPerEruption = Math.ceil(massPerEruption / kgPerCell);
+      const cellsPerSeason = Math.ceil(massPerSeason / kgPerCell);
+      h += `<span class="label">Per eruption</span><span class="value pool">${cellsPerEruption} cell${cellsPerEruption !== 1 ? 's' : ''}</span>`;
+      h += `<span class="label">Per active season</span><span class="value pool">${cellsPerSeason} cell${cellsPerSeason !== 1 ? 's' : ''}</span>`;
+      h += `<span class="label"></span><span class="value" style="color:#666;font-size:11px">@ ${fmtMass(kgPerCell)}/cell</span>`;
+    }
+
+    h += '</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+function fmtMass(kg) {
+  if (kg >= 1000) return (kg / 1000).toFixed(1) + ' t';
+  if (kg >= 1) return kg.toFixed(1) + ' kg';
+  return (kg * 1000).toFixed(0) + ' g';
+}
+
+function fmtMassRate(kgPerSec) {
+  if (kgPerSec >= 1) return kgPerSec.toFixed(1) + ' kg/s';
+  return (kgPerSec * 1000).toFixed(0) + ' g/s';
+}
+
+function fmtDuration(seconds) {
+  const cycles = seconds / 600;
+  if (cycles >= 1) return cycles.toFixed(1) + ' cycles';
+  return seconds.toFixed(0) + 's';
+}
+
 refresh();
-setInterval(refresh, 5000);
+setInterval(() => {
+  refresh();
+  if (currentView === 'resources') { if (resSubView === 'history') loadResHistory(); else loadResources(); }
+  if (currentView === 'geysers') loadGeysers();
+}, 5000);
 </script>
 </body>
 </html>

@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "session_id": "9140329a-3dc4-4c36-abf6-5f18abf58117",
+  "timestamp": "2026-03-04T19:54:12.724942454+00:00",
+  "machine_id": "roob",
+  "project_dir": "/home/matt/Git/ONI-Mods/oni-repl",
+  "git": {
+    "remote": "git@github.com:lawless-m/ONI-Mods.git",
+    "branch": "main",
+    "commit": "1647d216d110db7d61476316be5e88093d520183"
+  },
+  "conversation": [
+    {
+      "type": "user",
+      "timestamp": "2026-03-04T17:35:26.250Z",
+      "content": "is there a way ti dsiable steam achievments, this mod is a cheat"
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "used Agent"
+      ]
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "ran ls /home/matt/Git/ONI-Mods/oni-repl/"
+      ]
+    },
+    {
+      "type": "assistant",
+      "timestamp": "2026-03-04T17:36:41.373Z",
+      "content": "Fair enough! Let me look up how ONI handles achievement disabling.",
+      "usage": {
+        "input_tokens": 3,
+        "output_tokens": 12,
+        "cache_creation_input_tokens": 1605,
+        "cache_read_input_tokens": 22287
+      }
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "used WebSearch"
+      ]
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "used WebSearch"
+      ]
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "used WebSearch"
+      ]
+    },
+    {
+      "type": "assistant",
+      "timestamp": "2026-03-04T17:37:19.388Z",
+      "content": "Found the relevant API. Let me grab the source from Cairath's mod to see the exact pattern.",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "cache_creation_input_tokens": 883,
+        "cache_read_input_tokens": 25748
+      }
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "fetched https://github.com/Cairath/ONI-Mods/b..."
+      ]
+    },
+    {
+      "type": "assistant",
+      "timestamp": "2026-03-04T17:37:36.238Z",
+      "content": "The game already has built-in checks. The vanilla `ColonyAchievementTracker.UnlockPlatformAchievement` skips achievements when `Game.Instance.debugWasUsed` is `true`. Simplest approach: set that flag when your mod attaches.",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 10,
+        "cache_creation_input_tokens": 824,
+        "cache_read_input_tokens": 26631
+      }
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "read /home/matt/Git/ONI-Mods/oni-repl/ReplMod.cs"
+      ]
+    },
+    {
+      "type": "assistant",
+      "timestamp": "2026-03-04T17:37:39.622Z",
+      "content": "Just add one line to the `Game_OnSpawn_Patch`:",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "cache_creation_input_tokens": 836,
+        "cache_read_input_tokens": 27455
+      }
+    },
+    {
+      "type": "tool_summary",
+      "actions": [
+        "edited /home/matt/Git/ONI-Mods/oni-repl/ReplMod.cs"
+      ]
+    },
+    {
+      "type": "assistant",
+      "timestamp": "2026-03-04T17:37:59.010Z",
+      "content": "That's it. `Game.Instance.debugWasUsed = true` is the same flag the game sets when you use debug/sandbox mode. The vanilla `ColonyAchievementTracker.UnlockPlatformAchievement` already checks this and skips Steam achievement unlocks when it's set.\n\nThe flag persists on the save file, so once the REPL has been loaded on a colony, achievements stay disabled for that save even if the mod is later removed.\n\nSources:\n- [Cairath/ONI-Mods - DebugDoesNotDisableAchievementsPatches.cs](https://github.com/Cairath/ONI-Mods/blob/master/src/DebugDoesNotDisableAchievements/DebugDoesNotDisableAchievementsPatches.cs)\n- [ONI Wiki - Achievements](https://oxygennotincluded.wiki.gg/wiki/Achievements)",
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 229,
+        "cache_creation_input_tokens": 319,
+        "cache_read_input_tokens": 28291
+      }
+    }
+  ]
+}

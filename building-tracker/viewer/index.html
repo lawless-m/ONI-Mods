@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building Tracker Viewer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+</head>
+<body>
+
+<div id="drop-overlay">
+  <div id="drop-content">
+    <h1>Building Tracker Viewer</h1>
+    <p>Drop a <code>tracker.db</code> file here or click to browse</p>
+    <input type="file" id="file-input" accept=".db">
+  </div>
+</div>
+
+<canvas id="map-canvas"></canvas>
+
+<div id="controls" class="panel" hidden>
+  <div class="control-group">
+    <label>Time: <span id="time-label">-</span></label>
+    <input type="range" id="time-slider" min="0" max="0" value="0">
+  </div>
+  <div class="control-group">
+    <label>World</label>
+    <select id="world-select">
+      <option value="all">All (System View)</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Layers</label>
+    <label><input type="checkbox" id="layer-terrain" checked> Terrain</label>
+    <label><input type="checkbox" id="layer-buildings" checked> Buildings</label>
+    <label><input type="checkbox" id="layer-fog" checked> Fog</label>
+  </div>
+  <div class="control-group">
+    <label>Color Mode</label>
+    <select id="color-mode">
+      <option value="element">Element</option>
+      <option value="temperature">Temperature</option>
+      <option value="mass">Mass</option>
+    </select>
+  </div>
+</div>
+
+<div id="info-panel" class="panel" hidden>
+  <h3 id="info-title">-</h3>
+  <div id="info-body"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

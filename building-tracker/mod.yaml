@@ -1,0 +1,3 @@
+staticID: BuildingTrackerMod
+title: "Building Tracker"
+description: "Tracks per-building resource consumption and production each cycle, exports to SQLite database"

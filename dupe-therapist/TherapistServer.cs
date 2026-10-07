@@ -44,6 +44,8 @@ namespace DupeTherapist
             {
                 refreshTimer = RefreshInterval;
                 server.CachedJson = DupeSerializer.Serialize();
+                server.CachedResourcesJson = ResourceSerializer.Serialize();
+                server.CachedGeysersJson = GeyserSerializer.Serialize();
             }
 
             historyTimer -= Time.unscaledDeltaTime;
@@ -52,6 +54,7 @@ namespace DupeTherapist
                 historyTimer = HistoryInterval;
                 float cycle = GameClock.Instance != null ? GameClock.Instance.GetCycle() + GameClock.Instance.GetCurrentCycleAsPercentage() : 0;
                 server.History.RecordSnapshot(cycle);
+                server.ResHistory.RecordSnapshot(cycle);
 
                 // Portrait rendering disabled for now
             }
@@ -69,8 +72,11 @@ namespace DupeTherapist
         private Thread listenerThread;
         private volatile bool running;
         public volatile string CachedJson = "{}";
+        public volatile string CachedResourcesJson = "{}";
+        public volatile string CachedGeysersJson = "{}";
         private readonly ConcurrentQueue<PriorityChange> pendingChanges = new ConcurrentQueue<PriorityChange>();
         public readonly VitalHistory History = new VitalHistory();
+        public readonly ResourceHistory ResHistory = new ResourceHistory();
 
         public bool IsRunning => running;
         public string Url => "http://localhost:8585/";
@@ -143,6 +149,12 @@ namespace DupeTherapist
                     HandlePriorityPost(ctx);
                 else if (path == "/api/history" && ctx.Request.HttpMethod == "GET")
                     Respond(ctx.Response, 200, History.ToJson(), "application/json");
+                else if (path == "/api/resources" && ctx.Request.HttpMethod == "GET")
+                    Respond(ctx.Response, 200, CachedResourcesJson, "application/json");
+                else if (path == "/api/resource-history" && ctx.Request.HttpMethod == "GET")
+                    Respond(ctx.Response, 200, ResHistory.ToJson(), "application/json");
+                else if (path == "/api/geysers" && ctx.Request.HttpMethod == "GET")
+                    Respond(ctx.Response, 200, CachedGeysersJson, "application/json");
                 else if (path.StartsWith("/api/portrait") && ctx.Request.HttpMethod == "GET")
                     HandlePortrait(ctx);
                 else if (path == "/api/rename" && ctx.Request.HttpMethod == "POST")
@@ -759,6 +771,245 @@ namespace DupeTherapist
         }
     }
 
+    public static class ResourceSerializer
+    {
+        public static string Serialize()
+        {
+            var sb = new StringBuilder(8192);
+            sb.Append("{\"worlds\":[");
+
+            var cm = ClusterManager.Instance;
+            if (cm != null)
+            {
+                // Build category lookup: resource tag -> (categoryName, unit)
+                var catNames = new Dictionary<Tag, string>();
+                var catUnits = new Dictionary<Tag, string>();
+                MapCategories(catNames, catUnits, GameTags.MaterialCategories, "mass");
+                MapCategories(catNames, catUnits, GameTags.CalorieCategories, "calories");
+                MapCategories(catNames, catUnits, GameTags.UnitCategories, "units");
+
+                // Collect world info
+                var worldNames = new Dictionary<int, string>();
+                var worldStart = new Dictionary<int, bool>();
+                var moduleInteriors = new HashSet<int>();
+                foreach (var world in cm.WorldContainers)
+                {
+                    try
+                    {
+                        if (world.IsModuleInterior) { moduleInteriors.Add(world.id); continue; }
+                        string name;
+                        try { name = world.GetProperName(); }
+                        catch { name = world.gameObject.name; }
+                        worldNames[world.id] = name;
+                        try { worldStart[world.id] = world.IsStartWorld; } catch { worldStart[world.id] = false; }
+                    }
+                    catch { }
+                }
+
+                // Iterate ALL pickupables globally — bypasses WorldInventory
+                // which doesn't update for non-active DLC worlds
+                // worldId -> resourceTag -> totalMass
+                var worldResources = new Dictionary<int, Dictionary<Tag, float>>();
+                var pickupables = Components.Pickupables.Items;
+                if (pickupables != null)
+                {
+                    foreach (var p in pickupables)
+                    {
+                        try
+                        {
+                            int worldId = p.GetMyWorldId();
+                            if (moduleInteriors.Contains(worldId)) continue;
+                            if (!worldNames.ContainsKey(worldId)) continue;
+
+                            if (p.KPrefabID.HasTag(GameTags.StoredPrivate)) continue;
+
+                            Tag resTag = p.KPrefabID.PrefabTag;
+                            float mass = p.PrimaryElement.Mass;
+                            if (mass <= 0) continue;
+
+                            if (!worldResources.ContainsKey(worldId))
+                                worldResources[worldId] = new Dictionary<Tag, float>();
+                            var res = worldResources[worldId];
+                            if (res.ContainsKey(resTag)) res[resTag] += mass;
+                            else res[resTag] = mass;
+                        }
+                        catch { }
+                    }
+                }
+
+                // Serialize each world
+                bool firstWorld = true;
+                foreach (var worldId in worldNames.Keys.OrderBy(id => id))
+                {
+                    if (!firstWorld) sb.Append(',');
+                    firstWorld = false;
+
+                    sb.Append("{\"id\":").Append(worldId);
+                    sb.Append(",\"name\":\"").Append(Esc(worldNames[worldId])).Append('"');
+                    sb.Append(",\"isStartWorld\":").Append(worldStart[worldId] ? "true" : "false");
+                    sb.Append(",\"categories\":[");
+
+                    if (worldResources.TryGetValue(worldId, out var resources))
+                    {
+                        // Group by category
+                        var groups = new Dictionary<string, List<KeyValuePair<string, float>>>();
+                        var groupUnits = new Dictionary<string, string>();
+                        foreach (var kvp in resources)
+                        {
+                            string cat = "Other";
+                            string unit = "mass";
+                            if (catNames.TryGetValue(kvp.Key, out var cn))
+                            { cat = cn; unit = catUnits[kvp.Key]; }
+
+                            if (!groups.ContainsKey(cat))
+                            { groups[cat] = new List<KeyValuePair<string, float>>(); groupUnits[cat] = unit; }
+
+                            string resName;
+                            try { resName = kvp.Key.ProperNameStripLink(); }
+                            catch { resName = kvp.Key.Name; }
+                            groups[cat].Add(new KeyValuePair<string, float>(resName, kvp.Value));
+                        }
+
+                        bool firstCat = true;
+                        foreach (var cat in groups.OrderBy(kv => kv.Key))
+                        {
+                            if (!firstCat) sb.Append(',');
+                            firstCat = false;
+                            var items = cat.Value;
+                            items.Sort((a, b) => b.Value.CompareTo(a.Value));
+                            sb.Append("{\"name\":\"").Append(Esc(cat.Key)).Append('"');
+                            sb.Append(",\"unit\":\"").Append(groupUnits[cat.Key]).Append('"');
+                            sb.Append(",\"resources\":[");
+                            for (int i = 0; i < items.Count; i++)
+                            {
+                                if (i > 0) sb.Append(',');
+                                sb.Append("[\"").Append(Esc(items[i].Key))
+                                  .Append("\",").Append(items[i].Value.ToString("F1")).Append(']');
+                            }
+                            sb.Append("]}");
+                        }
+                    }
+
+                    sb.Append("]}");
+                }
+            }
+
+            sb.Append("]}");
+            return sb.ToString();
+        }
+
+        private static void MapCategories(Dictionary<Tag, string> catNames,
+            Dictionary<Tag, string> catUnits, IEnumerable<Tag> categories, string unit)
+        {
+            foreach (var catTag in categories)
+            {
+                try
+                {
+                    string catName;
+                    try { catName = catTag.ProperNameStripLink(); }
+                    catch { catName = catTag.Name; }
+                    var discovered = DiscoveredResources.Instance?.GetDiscoveredResourcesFromTag(catTag);
+                    if (discovered != null)
+                        foreach (var resTag in discovered)
+                            if (!catNames.ContainsKey(resTag))
+                            { catNames[resTag] = catName; catUnits[resTag] = unit; }
+                }
+                catch { }
+            }
+        }
+
+        private static string Esc(string s) => DupeSerializer.EscStatic(s);
+    }
+
+    public static class GeyserSerializer
+    {
+        public static string Serialize()
+        {
+            var sb = new StringBuilder(4096);
+            sb.Append("{\"geysers\":[");
+
+            var geysers = UnityEngine.Object.FindObjectsOfType<Geyser>();
+            if (geysers != null)
+            {
+                bool first = true;
+                foreach (var g in geysers.OrderBy(g => g.GetComponent<KPrefabID>()?.GetProperName() ?? ""))
+                {
+                    try
+                    {
+                        if (!first) sb.Append(',');
+                        first = false;
+                        SerializeGeyser(sb, g);
+                    }
+                    catch { }
+                }
+            }
+
+            sb.Append("]}");
+            return sb.ToString();
+        }
+
+        private static void SerializeGeyser(StringBuilder sb, Geyser g)
+        {
+            var config = g.configuration;
+            var name = g.GetComponent<KPrefabID>()?.GetProperName() ?? g.gameObject.name;
+            var studyable = g.GetComponent<Studyable>();
+            var uncoverable = g.GetComponent<Uncoverable>();
+            bool studied = studyable != null && studyable.Studied;
+            bool uncovered = uncoverable == null || uncoverable.IsUncovered;
+
+            int cell = Grid.PosToCell(g.transform.GetPosition());
+            Grid.CellToXY(cell, out int x, out int y);
+            int worldId = Grid.WorldIdx[cell];
+
+            var element = ElementLoader.FindElementByHash(config.GetElement());
+            string elementName = element?.name ?? config.GetElement().ToString();
+            string elementState = "unknown";
+            if (element != null)
+            {
+                if (element.IsLiquid) elementState = "liquid";
+                else if (element.IsGas) elementState = "gas";
+                else if (element.IsSolid) elementState = "solid";
+            }
+
+            sb.Append("{\"name\":\"").Append(Esc(name)).Append('"');
+            sb.Append(",\"element\":\"").Append(Esc(elementName)).Append('"');
+            sb.Append(",\"elementState\":\"").Append(elementState).Append('"');
+            sb.Append(",\"studied\":").Append(studied ? "true" : "false");
+            sb.Append(",\"uncovered\":").Append(uncovered ? "true" : "false");
+            sb.Append(",\"x\":").Append(x).Append(",\"y\":").Append(y);
+            sb.Append(",\"worldId\":").Append(worldId);
+
+            try
+            {
+                var world = ClusterManager.Instance?.GetWorld(worldId);
+                sb.Append(",\"worldName\":\"").Append(Esc(world?.GetProperName() ?? "")).Append('"');
+            }
+            catch { sb.Append(",\"worldName\":\"\""); }
+
+            sb.Append(",\"temperature\":").Append((config.GetTemperature() - 273.15f).ToString("F1"));
+
+            if (studied)
+            {
+                sb.Append(",\"emitRate\":").Append(config.GetEmitRate().ToString("F4"));
+                sb.Append(",\"massPerCycle\":").Append(config.GetMassPerCycle().ToString("F1"));
+                sb.Append(",\"onDuration\":").Append(config.GetOnDuration().ToString("F1"));
+                sb.Append(",\"offDuration\":").Append(config.GetOffDuration().ToString("F1"));
+                sb.Append(",\"iterationLength\":").Append(config.GetIterationLength().ToString("F1"));
+                sb.Append(",\"iterationPercent\":").Append(config.GetIterationPercent().ToString("F4"));
+                sb.Append(",\"yearOnDuration\":").Append(config.GetYearOnDuration().ToString("F1"));
+                sb.Append(",\"yearOffDuration\":").Append(config.GetYearOffDuration().ToString("F1"));
+                sb.Append(",\"yearLength\":").Append(config.GetYearLength().ToString("F1"));
+                sb.Append(",\"yearPercent\":").Append(config.GetYearPercent().ToString("F4"));
+                sb.Append(",\"averageEmission\":").Append(config.GetAverageEmission().ToString("F4"));
+                sb.Append(",\"maxPressure\":").Append(config.GetMaxPressure().ToString("F1"));
+            }
+
+            sb.Append('}');
+        }
+
+        private static string Esc(string s) => DupeSerializer.EscStatic(s);
+    }
+
     public class VitalHistory
     {
         private const int MaxSnapshots = 600; // ~5 hours at 30s intervals
@@ -903,6 +1154,122 @@ namespace DupeTherapist
                 }
                 sb.Append('}');
                 firstDupe = false;
+            }
+            sb.Append('}');
+            return sb.ToString();
+        }
+    }
+
+    public class ResourceHistory
+    {
+        private const int MaxSnapshots = 600;
+
+        // resourceName -> { unit, points[] }
+        private readonly Dictionary<string, ResourceSeries> data
+            = new Dictionary<string, ResourceSeries>();
+
+        private class ResourceSeries
+        {
+            public string unit;
+            public readonly List<VitalHistory.DataPoint> points = new List<VitalHistory.DataPoint>();
+        }
+
+        public void RecordSnapshot(float cycle)
+        {
+            // Build category lookup
+            var catUnits = new Dictionary<Tag, string>();
+            MapUnits(catUnits, GameTags.MaterialCategories, "mass");
+            MapUnits(catUnits, GameTags.CalorieCategories, "calories");
+            MapUnits(catUnits, GameTags.UnitCategories, "units");
+
+            // Collect module interiors to skip
+            var moduleInteriors = new HashSet<int>();
+            var cm = ClusterManager.Instance;
+            if (cm == null) return;
+            foreach (var world in cm.WorldContainers)
+            {
+                try { if (world.IsModuleInterior) moduleInteriors.Add(world.id); }
+                catch { }
+            }
+
+            // Sum totals per resource across all worlds
+            var totals = new Dictionary<Tag, float>();
+            var pickupables = Components.Pickupables.Items;
+            if (pickupables == null) return;
+
+            foreach (var p in pickupables)
+            {
+                try
+                {
+                    if (moduleInteriors.Contains(p.GetMyWorldId())) continue;
+                    if (p.KPrefabID.HasTag(GameTags.StoredPrivate)) continue;
+                    float mass = p.PrimaryElement.Mass;
+                    if (mass <= 0) continue;
+                    Tag tag = p.KPrefabID.PrefabTag;
+                    if (totals.ContainsKey(tag)) totals[tag] += mass;
+                    else totals[tag] = mass;
+                }
+                catch { }
+            }
+
+            foreach (var kvp in totals)
+            {
+                string name;
+                try { name = kvp.Key.ProperNameStripLink(); }
+                catch { name = kvp.Key.Name; }
+
+                string unit = "mass";
+                if (catUnits.TryGetValue(kvp.Key, out var u)) unit = u;
+
+                if (!data.TryGetValue(name, out var series))
+                {
+                    series = new ResourceSeries { unit = unit };
+                    data[name] = series;
+                }
+
+                series.points.Add(new VitalHistory.DataPoint { cycle = cycle, value = kvp.Value });
+                if (series.points.Count > MaxSnapshots)
+                    series.points.RemoveRange(0, series.points.Count - MaxSnapshots);
+            }
+        }
+
+        private static void MapUnits(Dictionary<Tag, string> catUnits,
+            IEnumerable<Tag> categories, string unit)
+        {
+            foreach (var catTag in categories)
+            {
+                try
+                {
+                    var discovered = DiscoveredResources.Instance?.GetDiscoveredResourcesFromTag(catTag);
+                    if (discovered != null)
+                        foreach (var resTag in discovered)
+                            if (!catUnits.ContainsKey(resTag))
+                                catUnits[resTag] = unit;
+                }
+                catch { }
+            }
+        }
+
+        public string ToJson()
+        {
+            var sb = new StringBuilder(8192);
+            sb.Append('{');
+            bool first = true;
+            foreach (var kvp in data.OrderBy(kv => kv.Key))
+            {
+                if (kvp.Value.points.Count < 2) continue;
+                if (!first) sb.Append(',');
+                first = false;
+                sb.Append('"').Append(DupeSerializer.EscStatic(kvp.Key)).Append("\":{\"unit\":\"")
+                  .Append(kvp.Value.unit).Append("\",\"points\":[");
+                for (int i = 0; i < kvp.Value.points.Count; i++)
+                {
+                    if (i > 0) sb.Append(',');
+                    var pt = kvp.Value.points[i];
+                    sb.Append('[').Append(pt.cycle.ToString("F2"))
+                      .Append(',').Append(pt.value.ToString("F1")).Append(']');
+                }
+                sb.Append("]}");
             }
             sb.Append('}');
             return sb.ToString();
